@@ -11,7 +11,7 @@ import os
 from functools import partial
 from multiprocessing import cpu_count, Pool
 
-year = 2017
+year = 2016
 
 
 def Find_Non_TSOFI(basepath):
@@ -202,7 +202,7 @@ def TimeScale(folderpath, ticker, date, tscale=None, saveOFIpathfile=None,
     Price_OFI_df.to_csv(saveresultpathfile)
 
     # Free Space
-    os.system('rm %s' % MSGBOOK)
+    # os.system('rm %s' % MSGBOOK)
 
 
 def TimeScale_list(sub_date_l, folderpath, ticker, tscale=None, saveOFIpathfile=None,
@@ -239,7 +239,8 @@ def parallelize(folderpath, ticker, tscale=None, saveOFIpathfile=None,
 
 
 if __name__ == "__main__":
-    basepath = '/data/localhost/not-backed-up/scratch/chzhang/LOB/LOBData/'
+    # basepath = '/data/localhost/not-backed-up/scratch/chzhang/LOB/LOBData/'
+    basepath = '../lobster_sample/tickers/'
     tscale = 1
     nlevels = 10
 

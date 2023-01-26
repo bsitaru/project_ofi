@@ -4,7 +4,7 @@ from constants import LEVELS
 
 
 def get_orderbook_columns(levels: int = LEVELS):
-    cols = [[f"bid_price_{i}", f"bid_size_{i}", f"ask_price_{i}", f"ask_size_{i}"] for i in range(1, levels + 1)]
+    cols = [[f"ask_price_{i}", f"ask_size_{i}", f"bid_price_{i}", f"bid_size_{i}"] for i in range(1, levels + 1)]
     cols = sum(cols, [])
     return cols
 

@@ -15,8 +15,8 @@ def compute_ofi_levels(orderbook_df: pd.DataFrame) -> pd.DataFrame:
         df[f"ofi_{i}"] = \
             (df[f"bid_price_{i}"] >= df[f"prev_bid_price_{i}"]) * df[f"bid_size_{i}"] \
             - (df[f"bid_price_{i}"] <= df[f"prev_bid_price_{i}"]) * df[f"prev_bid_size_{i}"] \
-            - (df[f"ask_price_{i}"] >= df[f"prev_ask_price_{i}"]) * df[f"ask_size_{i}"] \
-            + (df[f"ask_price_{i}"] <= df[f"prev_ask_price_{i}"]) * df[f"prev_ask_size_{i}"]
+            - (df[f"ask_price_{i}"] <= df[f"prev_ask_price_{i}"]) * df[f"ask_size_{i}"] \
+            + (df[f"ask_price_{i}"] >= df[f"prev_ask_price_{i}"]) * df[f"prev_ask_size_{i}"]
 
         # Compute average volume at this level.
         df[f"volume_{i}"] = (df[f"bid_size_{i}"] + df[f"ask_size_{i}"]) / 2.0

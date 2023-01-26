@@ -13,7 +13,7 @@ from multiprocessing import cpu_count, Pool
 
 
 missing_value = 9999999999
-year = 2017
+year = 2016
 
 
 def Find_Non_OFI(basepath):
@@ -27,7 +27,7 @@ def Find_Non_OFI(basepath):
         ticker_date_l = [ticker_date for ticker_date in ticker_date_l if isdir(join(ticker_path, ticker_date)) and str(year) in ticker_date]
         ticker_date_l.sort()
         if len(ticker_date_l) == 0:
-            os.system("rm -rf %s" % ticker_path)
+            # os.system("rm -rf %s" % ticker_path)
             pass
         else:
             ticker_date = ticker_date_l[-1]
@@ -162,7 +162,7 @@ def Price_OFI_All(folderpath, ticker, date, saveOFIpath=None, nlevels=200):
     PriceOFI_df.to_csv(saveOFIpathfile, index=False)
     
     # Free Space
-    os.system('rm %s' % ORDERBOOK)
+    # os.system('rm %s' % ORDERBOOK)
 
 
 def Price_OFI_All_list(sub_date_l, folderpath, ticker, saveOFIpath=None, nlevels=200):
@@ -178,7 +178,7 @@ def Price_OFI_All_list(sub_date_l, folderpath, ticker, saveOFIpath=None, nlevels
 # parallel process
 def parallelize(folderpath, ticker, saveOFIpath=None, nlevels=10):
     cores = cpu_count()                 # Number of CPU cores on your system
-    partitions = 20 #cores - 2              # Define as many partitions as you want
+    partitions = 1 #cores - 2              # Define as many partitions as you want
     date_l = Find_Non_OFI_Date(ticker, folderpath)
     data_split = np.array_split(date_l, partitions)
     pool = Pool(partitions)
@@ -194,7 +194,8 @@ def parallelize(folderpath, ticker, saveOFIpath=None, nlevels=10):
 
 if __name__ == "__main__":
     nlevels = 10
-    basepath = '/data/localhost/not-backed-up/scratch/chzhang/LOB/LOBData/'
+    # basepath = '/data/localhost/not-backed-up/scratch/chzhang/LOB/LOBData/'
+    basepath = '../lobster_sample/tickers/'
 
     ticker_l = Find_Non_OFI(basepath)
     # ticker_l = os.listdird(basepath)

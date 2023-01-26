@@ -127,12 +127,13 @@ def parallelize(ticker_l, data_path, tscale, seconds, year_l, nlevels, alphapath
 
 
 if __name__ == '__main__':
-    data_path = '/data/localhost/not-backed-up/scratch/chzhang/LOB/LOBData/'
+    # data_path = '/data/localhost/not-backed-up/scratch/chzhang/LOB/LOBData/'
+    data_path = '../lobster_sample/tickers/'
     nlevels = 10
     tscale = 1
     seconds = 10
-    year_l = [2017, 2018, 2019]
-    alphapath = '/data/localhost/not-backed-up/scratch/chzhang/LOB/Alphas/'
+    year_l = [2016]
+    alphapath = '../lobster_sample/TFX_Alpha/'
 
     # For all tickers, execute the complete procedure
     ticker_l = os.listdir(data_path)

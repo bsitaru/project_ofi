@@ -125,5 +125,5 @@ def compute_bucket_ofi_from_files(message_file: str, orderbook_file: str, levels
 
 
 def get_bucket_ofi_df(file_path: str) -> pd.DataFrame:
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path, low_memory=False)
     return df

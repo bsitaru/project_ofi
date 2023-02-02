@@ -1,15 +1,34 @@
-from data_manipulation.tick_ofi import generate_tick_ofi_file
-from data_manipulation.bucket_ofi import generate_bucket_ofi_file
+from datetime import date
+from data_manipulation.archive_process import process_archive_folder, process_split_ofi_folder
+
+from models.split_ofi import run_model
+
+
+def process_archive():
+    process_archive_folder(folder_path='./lobster_sample/test_data',
+                           temp_path='./lobster_sample/temp_data',
+                           out_path='./lobster_sample/data',
+                           levels=10,
+                           tickers=['TFX', 'PSA'],
+                           date_interval=(date.fromisoformat('2016-02-01'), date.fromisoformat('2016-02-10')),
+                           bucket_size=1,
+                           remove_after_process=True)
+
+
+def process_multiday():
+    process_split_ofi_folder(folder_path='./lobster_sample/data',
+                             out_file='./lobster_sample/combined.csv',
+                             levels=10,
+                             tickers=['TFX', 'PSA'],
+                             date_interval=(date.fromisoformat('2016-02-01'), date.fromisoformat('2016-02-10')),
+                             bucket_size=30 * 60)
+
+
+def run_lr():
+    run_model(train_data_path='./lobster_sample/combined.csv',
+              test_data_path='./lobster_sample/combined.csv',
+              levels=1)
+
 
 if __name__ == '__main__':
-    file = './lobster_sample/tickers/TFX/TFX_2016-04-27_10/TFX_2016-04-27_24900000_57900000'
-    message_file_path = f"{file}_message_10.csv"
-    orderbook_file_path = f"{file}_orderbook_10.csv"
-
-    tick_ofi_file_path = "./tick_ofis.csv"
-    bucket_ofi_file_path = "./bucket_ofis.csv"
-
-    generate_tick_ofi_file(message_file_path, orderbook_file_path, tick_ofi_file_path)
-    generate_bucket_ofi_file(message_file_path, orderbook_file_path, bucket_ofi_file_path)
-
-
+    run_lr()

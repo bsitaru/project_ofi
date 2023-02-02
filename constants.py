@@ -1,13 +1,14 @@
 LEVELS = 10
 
-START_TRADE = (9 * 60 + 30) * 60  # 09:30
-END_TRADE = (16 * 60 + 0) * 60  # 16:00
+START_TRADE = (9 * 60 + 30) * 60    # 09:30
+END_TRADE = (16 * 60 + 0) * 60      # 16:00
+VOLATILE_TIMEFRAME = 30 * 60           # volatile period to not consider
 
 BUCKET_SIZE = 10  # seconds
 
 
-def levels_list(name: str) -> list[str]:
-    return [f"{name}_{i}" for i in range(1, LEVELS + 1)]
+def levels_list(name: str, levels: int = LEVELS) -> list[str]:
+    return [f"{name}_{i}" for i in range(1, levels + 1)]
 
 
 OFI_TYPES = ['add', 'cancel', 'trade']

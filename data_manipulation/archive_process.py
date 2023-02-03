@@ -44,6 +44,9 @@ def is_valid_archive(folder_path: str, file_name: str, date_interval: (date, dat
 def extract_archive(folder_path: str, file_name: str, temp_path: str) -> str:
     file_path = os.path.join(folder_path, file_name)
     temp_folder = os.path.join(temp_path, file_name)
+    if os.path.exists(temp_folder):
+        print(f"Archive already extracted {file_name}")
+        return temp_folder
     os.mkdir(temp_folder)
     cmd = f"7za e '{file_path}' -o'{temp_folder}'"
     os.system(cmd)
@@ -131,7 +134,7 @@ def process_archive_folder(folder_path: str, temp_path: str, out_path: str, **kw
 def process_split_ofi_folder(folder_path: str, out_file: str, **kwargs):
     file_list = os.listdir(path=folder_path)
 
-    def filter_fn(file_name: str, date_interval: (date, date) = None, tickers: list[str] = None) -> bool:
+    def filter_fn(file_name: str, date_interval: (date, date) = None, tickers: list[str] = None, **kwargs) -> bool:
         file_path = os.path.join(folder_path, file_name)
         if not os.path.isfile(file_path):
             return False
@@ -141,6 +144,7 @@ def process_split_ofi_folder(folder_path: str, out_file: str, **kwargs):
         if len(s) != 4:
             return False
         [ticker, d, file_type, lvl] = s
+        d = date.fromisoformat(d)
 
         if date_interval is not None:
             left, right = date_interval
@@ -153,7 +157,7 @@ def process_split_ofi_folder(folder_path: str, out_file: str, **kwargs):
 
         return True
 
-    files = list(filter(filter_fn, file_list))
+    files = list(filter(lambda x: filter_fn(file_name=x, **kwargs), file_list))
 
     if os.path.exists(out_file):
         os.remove(out_file)

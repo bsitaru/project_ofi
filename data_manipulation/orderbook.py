@@ -9,7 +9,8 @@ def get_orderbook_columns(levels: int):
 
 def get_orderbook_df(orderbook_file: str, levels: int) -> pd.DataFrame:
     cols = get_orderbook_columns(levels)
-    df = pd.read_csv(orderbook_file, header=None, names=cols, low_memory=False)
+    c_dtype = {c: int for c in cols}
+    df = pd.read_csv(orderbook_file, header=None, names=cols, dtype=c_dtype)
     return df
 
 

@@ -11,6 +11,9 @@ from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
 
 bucket_ofi_cols = ['start_time', 'event_count', 'start_price', 'end_price', 'return_now'] + OFI_COLS + VOLUME_COLS
+c_dtype = {c: float for c in bucket_ofi_cols}
+c_dtype['start_time'] = int
+c_dtype['event_count'] = int
 
 
 def compute_return_now(start_price: pd.Series, end_price: pd.Series):
@@ -125,5 +128,5 @@ def compute_bucket_ofi_from_files(message_file: str, orderbook_file: str, levels
 
 
 def get_bucket_ofi_df(file_path: str) -> pd.DataFrame:
-    df = pd.read_csv(file_path, low_memory=False)
+    df = pd.read_csv(file_path, dtype=c_dtype)
     return df

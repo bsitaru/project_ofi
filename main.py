@@ -4,6 +4,8 @@ from data_manipulation.archive_process import process_archive_folder, process_sp
 
 from models.split_ofi import run_model
 
+from constants import TICKERS
+
 
 def process_archive():
     flt = FileFilter(start_date=date.fromisoformat('2016-03-01'),

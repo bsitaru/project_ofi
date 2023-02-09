@@ -6,7 +6,7 @@ from sklearn.linear_model import LinearRegression
 from constants import levels_list
 
 
-def get_data_from_df(df: pd.DataFrame, levels: int, **kwargs) -> (np.ndarray, np.ndarray):
+def get_data_from_df(df: pd.DataFrame, levels: int) -> (np.ndarray, np.ndarray):
     cols = levels_list('ofi_add', levels) + levels_list('ofi_cancel', levels) + levels_list('ofi_trade', levels)
     # cols = levels_list('ofi', levels)
     x = df[cols].to_numpy()
@@ -14,7 +14,7 @@ def get_data_from_df(df: pd.DataFrame, levels: int, **kwargs) -> (np.ndarray, np
     return x, y
 
 
-def run_model(train_data_path: str, test_data_path: str, levels: int, **kwargs) -> ():
+def run_model(train_data_path: str, test_data_path: str, levels: int) -> ():
     def get_data_from_file(path: str):
         df = pd.read_csv(path)
         return get_data_from_df(df, levels)

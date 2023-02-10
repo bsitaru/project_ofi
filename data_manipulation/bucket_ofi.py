@@ -10,7 +10,7 @@ from data_manipulation.message import get_message_df
 from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
 
-bucket_ofi_cols = ['start_time', 'event_count', 'start_price', 'end_price', 'return_now'] + OFI_COLS + VOLUME_COLS
+bucket_ofi_cols = ['start_time', 'event_count', 'start_price', 'end_price', 'return_now', 'return_future'] + OFI_COLS + VOLUME_COLS
 c_dtype = {c: float for c in bucket_ofi_cols}
 c_dtype['start_time'] = int
 c_dtype['event_count'] = int
@@ -35,9 +35,15 @@ def compute_start_price_in_bucket(start_price: pd.Series, end_price: np.ndarray)
     return ret
 
 
+def compute_return_future(return_now: pd.Series):
+    ret = np.roll(return_now, -1)
+    ret[-1:] = 0
+    return ret
+
+
 def round_df(df: pd.DataFrame) -> ():
     for col in bucket_ofi_cols:
-        if col == 'return_now':
+        if col in ['return_now', 'return_future']:
             df[col] = np.around(df[col], decimals=ROUNDING_RET)
         elif df.dtypes[col] == float:
             df[col] = np.around(df[col], decimals=ROUNDING)
@@ -60,6 +66,7 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
     df['start_price'] = compute_start_price_in_bucket(df['start_price'], df['end_price'])
     df['event_count'] = group_df.agg('size')
     df['return_now'] = compute_return_now(df['start_price'], df['end_price'])
+    df['return_future'] = compute_return_future(df['return_now'])
 
     # Compute normalized OFI
     # !!! There should always be at least an order on the market during the whole day.
@@ -108,6 +115,7 @@ def compute_bucket_ofi_df_from_bucket_ofi(df: pd.DataFrame, props: BucketOFIProp
     df['end_price'] = group_df.apply(lambda df: df['end_price'].tolist()[-1])
     df['start_price'] = compute_start_price_in_bucket(df['start_price'], df['end_price'])
     df['return_now'] = compute_return_now(df['start_price'], df['end_price'])
+    df['return_future'] = compute_return_future(df['return_now'])
 
     for i in range(1, props.levels + 1):
         volume_col = f"volume_{i}"

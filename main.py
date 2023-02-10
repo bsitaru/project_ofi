@@ -46,8 +46,7 @@ def process_multiday():
 def run_lr():
     model = SplitOFICurrentReturn(train_data_file='./lobster_sample/combined2.csv', levels=1)
     model.fit_and_score()
-    print(model.model.intercept_)
 
 
 if __name__ == '__main__':
-    run_lr()
+    process_multiday()

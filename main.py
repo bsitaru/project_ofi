@@ -4,6 +4,8 @@ from data_manipulation.archive_process import process_archive_folder, process_sp
 
 from models.split_ofi import run_model
 
+from models.split_ofi_current_return import SplitOFICurrentReturn
+
 from constants import TICKERS
 
 
@@ -42,10 +44,10 @@ def process_multiday():
 
 
 def run_lr():
-    run_model(train_data_path='./lobster_sample/combined2.csv',
-              test_data_path='./lobster_sample/combined2.csv',
-              levels=1)
+    model = SplitOFICurrentReturn(train_data_file='./lobster_sample/combined2.csv', levels=1)
+    model.fit_and_score()
+    print(model.model.intercept_)
 
 
 if __name__ == '__main__':
-    process_multiday()
+    run_lr()

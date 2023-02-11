@@ -108,6 +108,7 @@ def filter_file_list(file_list: list[str], filter_fn):
 def process_extracted_archive(folder_path: str, out_path: str, bucket_ofi_props: BucketOFIProps,
                               remove_after_process: bool, parallel_jobs: int) -> ():
     file_list = os.listdir(path=folder_path)
+    file_list = sorted(file_list)
 
     def process_file(file_name: str):
         [ticker, d, _, _, file_type, lvl] = file_name[:-4].split('_')
@@ -165,6 +166,7 @@ def process_archive_folder(folder_path: str, temp_path: str, out_path: str, flt:
     # Find valid archives
     file_list = os.listdir(path=folder_path)
     archives = filter_file_list(file_list, filter_fn=partial(is_valid_archive, folder_path=folder_path, flt=flt))
+    archives = sorted(archives)
 
     for archive_name in archives:
         try:
@@ -212,6 +214,7 @@ def process_archive_folder(folder_path: str, temp_path: str, out_path: str, flt:
 
 def process_split_ofi_folder(folder_path: str, out_file: str, bucket_ofi_props: BucketOFIProps):
     file_list = os.listdir(path=folder_path)
+    file_list = sorted(file_list)
     for file_name in file_list:
         if VERBOSE:
             print(f"Processing {file_name}...")
@@ -230,6 +233,7 @@ def process_split_ofi_archive_folder(folder_path: str, out_file: str, temp_path:
                                      bucket_ofi_props: BucketOFIProps, remove_after_process: bool):
     file_list = os.listdir(path=folder_path)
     archive_list = filter_file_list(file_list, filter_fn=partial(is_valid_split_ofi_archive, flt=flt))
+    archive_list = sorted(archive_list)
 
     if os.path.exists(out_file):
         os.remove(out_file)

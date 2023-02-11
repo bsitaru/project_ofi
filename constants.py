@@ -4,11 +4,12 @@ LEVELS = 10
 ROUNDING_RET = 6
 ROUNDING = 4
 
-START_TRADE = (9 * 60 + 30) * 60    # 09:30
-END_TRADE = (16 * 60 + 0) * 60      # 16:00
-VOLATILE_TIMEFRAME = 30 * 60           # volatile period to not consider
+START_TRADE = (9 * 60 + 30) * 60  # 09:30
+END_TRADE = (16 * 60 + 0) * 60  # 16:00
+VOLATILE_TIMEFRAME = 30 * 60  # volatile period to not consider
 
 BUCKET_SIZE = 10  # seconds
+
 
 def levels_list(name: str, levels: int = LEVELS) -> list[str]:
     return [f"{name}_{i}" for i in range(1, levels + 1)]

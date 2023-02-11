@@ -10,7 +10,8 @@ from data_manipulation.message import get_message_df
 from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
 
-bucket_ofi_cols = ['start_time', 'event_count', 'start_price', 'end_price', 'return_now', 'return_future'] + OFI_COLS + VOLUME_COLS
+bucket_ofi_cols = ['start_time', 'event_count', 'start_price', 'end_price', 'return_now',
+                   'return_future'] + OFI_COLS + VOLUME_COLS
 c_dtype = {c: float for c in bucket_ofi_cols}
 c_dtype['start_time'] = int
 c_dtype['event_count'] = int
@@ -37,7 +38,7 @@ def compute_start_price_in_bucket(start_price: pd.Series, end_price: np.ndarray)
 
 def compute_return_future(return_now: pd.Series):
     ret = np.roll(return_now, -1)
-    ret[-1:] = 0
+    ret[-1:] = 0  # 0 for last bucket
     return ret
 
 

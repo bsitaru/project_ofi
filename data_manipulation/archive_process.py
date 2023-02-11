@@ -11,6 +11,9 @@ from data_manipulation.bucket_ofi import compute_bucket_ofi_from_files, get_new_
 from data_manipulation.multiday_bucket_ofi import prepare_df_for_multiday, MultidayProps
 
 
+VERBOSE = True
+
+
 class FileFilter:
     def __init__(self, start_date: date = None, end_date: date = None, levels: int = None, tickers: list[str] = None):
         self.start_date = start_date
@@ -109,7 +112,8 @@ def process_extracted_archive(folder_path: str, out_path: str, bucket_ofi_props:
     def process_file(file_name: str):
         [ticker, d, _, _, file_type, lvl] = file_name[:-4].split('_')
         if file_type == 'message':
-            print(f"Processing {file_name}...")
+            if VERBOSE:
+                print(f"Processing {file_name}...")
             message_file_name = file_name
             orderbook_file_name = file_name.replace('message', 'orderbook')
             message_file_path = os.path.join(folder_path, message_file_name)
@@ -164,11 +168,13 @@ def process_archive_folder(folder_path: str, temp_path: str, out_path: str, flt:
 
     for archive_name in archives:
         try:
-            print(f"Processing Archive {archive_name}...")
+            if VERBOSE:
+                print(f"Processing Archive {archive_name}...")
 
             temp_folder = os.path.join(temp_path, archive_name)
             if os.path.exists(temp_folder):
-                print(f"Archive already extracted {archive_name}")
+                if VERBOSE:
+                    print(f"Archive already extracted {archive_name}")
             else:
                 os.mkdir(temp_folder)
                 archive_path = os.path.join(folder_path, archive_name)
@@ -190,7 +196,8 @@ def process_archive_folder(folder_path: str, temp_path: str, out_path: str, flt:
                 shutil.rmtree(temp_folder)
 
             if create_archive:
-                print(f"Creating archive {new_archive_name}...")
+                if VERBOSE:
+                    print(f"Creating archive {new_archive_name}...")
                 new_archive_path = os.path.join(out_path, new_archive_name)
                 archive = py7zr.SevenZipFile(new_archive_path, 'w')
                 file_list = os.listdir(new_out_path)
@@ -206,7 +213,8 @@ def process_archive_folder(folder_path: str, temp_path: str, out_path: str, flt:
 def process_split_ofi_folder(folder_path: str, out_file: str, bucket_ofi_props: BucketOFIProps):
     file_list = os.listdir(path=folder_path)
     for file_name in file_list:
-        print(f"Processing {file_name}...")
+        if VERBOSE:
+            print(f"Processing {file_name}...")
         file_path = os.path.join(folder_path, file_name)
         bucket_ofi_props.prev_bucket_size = get_bucket_size_from_file_name(file_name)
         df = get_bucket_ofi_df(file_path)
@@ -227,7 +235,8 @@ def process_split_ofi_archive_folder(folder_path: str, out_file: str, temp_path:
         os.remove(out_file)
 
     for archive_name in archive_list:
-        print(f"Processing Archive {archive_name}...")
+        if VERBOSE:
+            print(f"Processing Archive {archive_name}...")
         temp_folder = os.path.join(temp_path, archive_name)
         if not os.path.exists(temp_folder):
             os.mkdir(temp_folder)

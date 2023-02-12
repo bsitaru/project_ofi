@@ -2,3 +2,5 @@
 lobster_sample/
 old/
 __pycache__/
+data/
+results/

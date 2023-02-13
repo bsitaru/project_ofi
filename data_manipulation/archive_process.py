@@ -116,7 +116,6 @@ class SplitOFIToMultidayFileProcessor(ExtractedArchiveProcessor):
             print(f"Processing {file_name}...")
         file_path = os.path.join(folder_path, file_name)
         df = get_bucket_ofi_df(file_path)
-        df = compute_bucket_ofi_df_from_bucket_ofi(df, props=self.bucket_ofi_props)
         df = prepare_df_for_multiday(df, file_name,
                                      props=MultidayProps(bucket_size=self.bucket_ofi_props.bucket_size))
         if os.path.exists(out_path):

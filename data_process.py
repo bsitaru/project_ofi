@@ -63,13 +63,13 @@ def split_ofi_to_split_ofi(folder_path: str, temp_path: str, out_path: str, buck
 
 
 @main.command()
-def multiday(folder_path: str, temp_path: str, out_file: str, bucket_size: int, prev_bucket_size: int,
+def multiday(folder_path: str, temp_path: str, out_file: str, bucket_size: int,
              tickers: str = None, start_date: str = None, end_date: str = None, rounding: bool = True,
              remove_after_process: bool = True):
     start_date = process_date(start_date)
     end_date = process_date(end_date)
     bucket_ofi_props = BucketOFIProps(levels=LEVELS, bucket_size=bucket_size, rounding=rounding,
-                                      prev_bucket_size=prev_bucket_size)
+                                      prev_bucket_size=bucket_size)
 
     archive_processor = SplitOFIArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS,
                                                  tickers=tickers)

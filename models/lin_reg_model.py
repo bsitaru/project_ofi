@@ -1,7 +1,10 @@
 import numpy as np
 import pandas as pd
+import statsmodels.api as sm
 
+from abc import ABC, abstractmethod
 from sklearn.linear_model import LinearRegression
+from constants import levels_list
 
 
 def read_csv(file: str, process_df) -> (np.ndarray, np.ndarray):
@@ -9,23 +12,61 @@ def read_csv(file: str, process_df) -> (np.ndarray, np.ndarray):
     return process_df(df)
 
 
-class LinRegModel:
-    def __init__(self):
-        self.train_data = None
-        self.test_data = None
-        self.model = LinearRegression()
+class LinRegModel(ABC):
+    def __init__(self, train_df: pd.DataFrame, test_df: pd.DataFrame = None):
+        self.model = None
+        self.results = None
+        self.train_data = self.process_df(train_df)
+        self.test_data = self.process_df(test_df) if test_df is not None else None
+        self.tst_txt = ''
+        self.lr_model = None
 
-    def fit(self, data: (np.ndarray, np.ndarray)) -> ():
-        x, y = data
-        self.model.fit(x, y)
+    def fit(self) -> ():
+        x, y = self.train_data
+        self.model = sm.OLS(y, sm.add_constant(x))
+        self.results = self.model.fit()
+        self.lr_model = LinearRegression().fit(x, y)
 
-    def score(self, name: str, data: (np.ndarray, np.ndarray)) -> ():
-        x, y = data
-        s = self.model.score(x, y)
-        print(f"{name} score: {s}")
-
-    def fit_and_score(self):
-        self.fit(self.train_data)
-        self.score(name=f"{self.name}_train", data=self.train_data)
+    def score_test(self) -> ():
         if self.test_data:
-            self.score(name=f"{self.name}_test", data=self.test_data)
+            x, y = self.test_data
+            r2 = self.lr_model.score(x, y)
+            self.tst_txt = f'Out-of-sample r^2: {r2}'
+
+    def summary(self) -> ():
+        sum_txt = self.results.summary().as_text()
+        return '\n'.join([sum_txt, self.tst_txt])
+
+    @abstractmethod
+    def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
+        pass
+
+
+class SplitOFIModel(LinRegModel):
+    def __init__(self, train_df: pd.DataFrame, levels: int, return_type: str, test_df: pd.DataFrame = None):
+        self.levels = levels
+        self.name = f"SplitOFI_{levels}_{return_type}"
+        self.return_col = 'return_now' if return_type == 'current' else 'return_future'
+        super().__init__(train_df, test_df)
+
+    def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
+        levels = self.levels
+        cols = levels_list('ofi_add', levels) + levels_list('ofi_cancel', levels) + levels_list('ofi_trade', levels)
+        x = df[cols].to_numpy()
+        y = df[[self.return_col]].to_numpy()
+        return x, y
+
+
+class OFIModel(LinRegModel):
+    def __init__(self, train_df: pd.DataFrame, levels: int, return_type: str, test_df: pd.DataFrame = None):
+        self.levels = levels
+        self.name = f"OFI_{levels}_{return_type}"
+        self.return_col = 'return_now' if return_type == 'current' else 'return_future'
+        super().__init__(train_df, test_df)
+
+    def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
+        levels = self.levels
+        cols = levels_list('ofi', levels)
+        x = df[cols].to_numpy()
+        y = df[[self.return_col]].to_numpy()
+        return x, y

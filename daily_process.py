@@ -8,8 +8,10 @@ from constants import TICKERS
 from models.lin_reg_model import SplitOFIModel, OFIModel
 
 START_DATE = date.fromisoformat('2019-02-01')
+TRAIN_PERIOD = 30 # days
 PATH = './results/h30/'
-TKR = TICKERS[:100]
+OUT_FILE = './results/h30/results.csv'
+TKR = TICKERS[:2]
 
 
 def run_models(name: str, d: date, df_train, df_test):
@@ -32,6 +34,11 @@ def run_models(name: str, d: date, df_train, df_test):
         file = open(file_path, 'w')
         print(summary, file=file)
         file.close()
+        df_summary = model.df_summary(name, d)
+        if os.path.exists(OUT_FILE):
+            df_summary.to_csv(OUT_FILE, mode='a', index=False, header=False)
+        else:
+            df_summary.to_csv(OUT_FILE, index=False)
 
 
 def main():
@@ -39,13 +46,17 @@ def main():
     df['date'] = np.array(list(map(date.fromisoformat, df['date'])))
     dates = np.unique(df['date'].to_numpy())
     dates = dates[dates >= START_DATE]
-    for d in dates:
+
+    if os.path.exists(OUT_FILE):
+        os.remove(OUT_FILE)
+
+    for d in dates[:2]:
         print(f'Processing date {d}...')
         folder = os.path.join(PATH, str(d))
         if not os.path.exists(folder):
             os.mkdir(folder)
 
-        past_d = d - timedelta(days=30)
+        past_d = d - timedelta(days=TRAIN_PERIOD)
         df_train = df[(df['date'] >= past_d) & (df['date'] < d)]
         df_test = df[df['date'] == d]
         run_models('universal', d, df_train, df_test)

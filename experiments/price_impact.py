@@ -4,12 +4,16 @@ import data_loader.one_day as loader
 import constants
 import math
 import sys
+import os
 
 from statistics import mean
+from joblib import Parallel, delayed
 
 
-def run_experiment(folder_path: str, temp_path: str, bucket_size: int, in_sample_size: int, os_size: int = None,
-                   rolling: int = None, tickers: list[str] = None, start_date: date = None, end_date: date = None):
+def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_size: int, in_sample_size: int,
+                   os_size: int = None,
+                   rolling: int = None, tickers: list[str] = None, start_date: date = None, end_date: date = None,
+                   parallel_jobs: int = 1):
     os_size = in_sample_size if os_size is None else os_size
     rolling = in_sample_size if rolling is None else rolling
 
@@ -59,16 +63,22 @@ def run_experiment(folder_path: str, temp_path: str, bucket_size: int, in_sample
         print(f'{ticker} --- INS : {avg_r2_ins} --- OOS: {avg_r2_oos}')
         # print(f'R2 Out of Sample : {avg_r2_oos}')
 
+        results_file = os.path.join(results_path, ticker)
+        f = open(results_file, 'w')
+        f.write('\n'.join([str(loc_ins_r2), str(loc_oos_r2)]))
+        f.close()
+
         nonlocal ins_r2
         nonlocal oos_r2
         ins_r2 += loc_ins_r2
         oos_r2 += loc_oos_r2
 
-    for ticker in tickers:
-        run_experiment_for_ticker(ticker)
+    # for ticker in tickers:
+    #     run_experiment_for_ticker(ticker)
+    Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in tickers)
 
-    avg_r2_ins = mean(ins_r2)
-    avg_r2_oos = mean(oos_r2)
+    # avg_r2_ins = mean(ins_r2)
+    # avg_r2_oos = mean(oos_r2)
 
-    print(f'R2 In Sample : {avg_r2_ins}')
-    print(f'R2 Out of Sample : {avg_r2_oos}')
+    # print(f'R2 In Sample : {avg_r2_ins}')
+    # print(f'R2 Out of Sample : {avg_r2_oos}')

@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 
 from datetime import date
 from constants import START_TRADE, END_TRADE, VOLATILE_TIMEFRAME
@@ -29,5 +30,7 @@ def prepare_df_for_multiday(df: pd.DataFrame, file_name: str, props: MultidayPro
 
 
 def get_multiday_df(file_path: str):
+    if not os.path.exists(file_path):
+        df = pd.DataFrame(columns=list(c_dtype.keys()))
     df = pd.read_csv(file_path, dtype=c_dtype)
     return df

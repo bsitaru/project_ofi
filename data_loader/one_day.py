@@ -35,7 +35,7 @@ def get_dates_from_archive_files(folder_path: str, tickers: list[str] = None):
 def get_day_df(folder_path: str, temp_path: str, d: date, bucket_size: int, tickers: list[str] = None):
     temp_file = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20)) + '_' + str(d) + '.csv'
     temp_file = os.path.join(temp_path, temp_file)
-    tickers = None if tickers is None else ''.join(tickers)
+    tickers = None if tickers is None else ' '.join(tickers)
     data_process.multiday(folder_path=folder_path, temp_path=temp_path, out_file=temp_file, bucket_size=bucket_size,
                           start_date=str(d), end_date=str(d), tickers=tickers, verbose=False)
     df = get_multiday_df(temp_file)

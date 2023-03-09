@@ -52,10 +52,7 @@ class LinRegModel(ABC):
         return df
 
     def get_adj_r2(self):
-        if math.isnan(self.results.rsquared_adj):
-            return self.lr_r2
         return self.results.rsquared_adj
-        # return self.results.rsquared_adj
 
     def get_oos_r2(self):
         return self.tst_r2

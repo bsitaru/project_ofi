@@ -3,6 +3,7 @@ from models.lin_reg_model import SplitOFIModel, OFIModel
 import data_loader.one_day as loader
 import constants
 import math
+import sys
 
 from statistics import mean
 
@@ -30,8 +31,11 @@ def run_experiment(folder_path: str, temp_path: str, bucket_size: int, in_sample
 
         dates = list(filter(filter_date, dates))
 
+        loc_ins_r2 = []
+        loc_oos_r2 = []
+
         for d in dates:
-            print(f"Running {d}...")
+            print(f"Running {d}...", file=sys.stderr)
             df = loader.get_day_df(folder_path=folder_path, temp_path=temp_path, d=d, bucket_size=bucket_size,
                                    tickers=[ticker])
             start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
@@ -47,8 +51,18 @@ def run_experiment(folder_path: str, temp_path: str, bucket_size: int, in_sample
                 # Skip if r2 is nan
                 if math.isnan(model.get_adj_r2()):
                     continue
-                ins_r2.append(model.get_adj_r2())
-                oos_r2.append(model.get_oos_r2())
+                loc_ins_r2.append(model.get_adj_r2())
+                loc_oos_r2.append(model.get_oos_r2())
+
+        avg_r2_ins = mean(loc_ins_r2)
+        avg_r2_oos = mean(loc_oos_r2)
+        print(f'{ticker} --- INS : {avg_r2_ins} --- OOS: {avg_r2_oos}')
+        # print(f'R2 Out of Sample : {avg_r2_oos}')
+
+        nonlocal ins_r2
+        nonlocal oos_r2
+        ins_r2 += loc_ins_r2
+        oos_r2 += loc_oos_r2
 
     for ticker in tickers:
         run_experiment_for_ticker(ticker)

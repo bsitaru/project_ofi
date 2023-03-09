@@ -6,6 +6,7 @@ from datetime import date
 from abc import ABC, abstractmethod
 from sklearn.linear_model import LinearRegression
 from constants import levels_list
+import math
 
 
 def read_csv(file: str, process_df) -> (np.ndarray, np.ndarray):
@@ -22,6 +23,7 @@ class LinRegModel(ABC):
         self.tst_txt = ''
         self.tst_r2 = None
         self.lr_model = None
+        self.lr_r2 = None
         self.name = None
 
     def fit(self, train_df) -> ():
@@ -29,6 +31,7 @@ class LinRegModel(ABC):
         self.model = sm.OLS(y, sm.add_constant(x))
         self.results = self.model.fit()
         self.lr_model = LinearRegression().fit(x, y)
+        self.lr_r2 = self.lr_model.score(x, y)
 
     def score_test(self, test_df) -> ():
         if test_df is not None:
@@ -37,7 +40,7 @@ class LinRegModel(ABC):
             self.tst_r2 = r2
             self.tst_txt = f'Out-of-sample r^2: {r2}'
 
-    def summary(self) -> ():
+    def summary(self) -> str:
         sum_txt = self.results.summary().as_text()
         return '\n'.join([sum_txt, self.tst_txt])
 
@@ -49,7 +52,10 @@ class LinRegModel(ABC):
         return df
 
     def get_adj_r2(self):
+        if math.isnan(self.results.rsquared_adj):
+            return self.lr_r2
         return self.results.rsquared_adj
+        # return self.results.rsquared_adj
 
     def get_oos_r2(self):
         return self.tst_r2

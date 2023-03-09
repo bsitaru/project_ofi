@@ -9,9 +9,9 @@ from models.lin_reg_model import SplitOFIModel, OFIModel
 
 START_DATE = date.fromisoformat('2019-02-01')
 TRAIN_PERIOD = 30 # days
-PATH = './results/h30/'
-OUT_FILE = './results/h30/results.csv'
-TKR = TICKERS[:2]
+PATH = './results/h1/'
+OUT_FILE = './results/h1/results.csv'
+TKR = TICKERS[:5]
 
 
 def run_models(name: str, d: date, df_train, df_test):
@@ -42,7 +42,7 @@ def run_models(name: str, d: date, df_train, df_test):
 
 
 def main():
-    df = pd.read_csv('./lobster_sample/combined_30m_rol10m.csv')
+    df = pd.read_csv('./lobster_sample/combined_1m.csv')
     df['date'] = np.array(list(map(date.fromisoformat, df['date'])))
     dates = np.unique(df['date'].to_numpy())
     dates = dates[dates >= START_DATE]
@@ -50,7 +50,7 @@ def main():
     if os.path.exists(OUT_FILE):
         os.remove(OUT_FILE)
 
-    for d in dates[:2]:
+    for d in dates:
         print(f'Processing date {d}...')
         folder = os.path.join(PATH, str(d))
         if not os.path.exists(folder):

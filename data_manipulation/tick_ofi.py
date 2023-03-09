@@ -40,14 +40,14 @@ def compute_ofi_type(message_df: pd.DataFrame) -> np.ndarray:
 
 def compute_tick_ofi_df(message_df: pd.DataFrame, orderbook_df: pd.DataFrame, levels: int,
                         trading_hours_only: bool = True) -> pd.DataFrame:
-    df = message_df[['time']].copy()
+    df = message_df[['time', 'event_type']].copy()
     df['ofi_type'] = compute_ofi_type(message_df)
 
     ofi_df = compute_ofi_levels(orderbook_df, levels)
 
     df = pd.concat([df, ofi_df], axis=1)
 
-    cols = ['time', 'price', 'ofi_type'] + \
+    cols = ['time', 'price', 'ofi_type', 'event_type'] + \
            [f'ofi_{i}' for i in range(1, levels + 1)] + \
            [f'volume_{i}' for i in range(1, levels + 1)]
 

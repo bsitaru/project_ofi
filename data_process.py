@@ -1,8 +1,10 @@
 import typer
 
+import pandas as pd
+
 from datetime import date
 from data_manipulation.archive_process import L3ArchiveProcessor, L3ToSplitOFIFileProcessor, FileFilter, BucketOFIProps, \
-    SplitOFIArchiveProcessor, SplitOFIToSplitOFIFileProcessor, SplitOFIToMultidayFileProcessor
+    SplitOFIArchiveProcessor, SplitOFIToSplitOFIFileProcessor, SplitOFIToMultidayFileProcessor, DataAssertFileProcessor
 from constants import TICKERS, LEVELS
 
 main = typer.Typer()
@@ -10,6 +12,12 @@ main = typer.Typer()
 
 def process_date(d: str) -> date:
     return date.fromisoformat(d) if d is not None else None
+
+
+def process_tickers(tickers: str):
+    if tickers is None:
+        return None
+    return tickers.split(' ')
 
 
 def get_flt_and_bucket_ofi_props(tickers, start_date, end_date, bucket_size, rounding):
@@ -29,6 +37,7 @@ def get_flt_and_bucket_ofi_props(tickers, start_date, end_date, bucket_size, rou
 def l3_to_split_ofi(folder_path: str, temp_path: str, out_path: str, bucket_size: int, tickers: str = None,
                     start_date: str = None, end_date: str = None, rounding: bool = True,
                     remove_after_process: bool = True, archive_output: bool = True, parallel_jobs: int = 1):
+    tickers = process_tickers(tickers)
     start_date = process_date(start_date)
     end_date = process_date(end_date)
     bucket_ofi_props = BucketOFIProps(levels=LEVELS, bucket_size=bucket_size, rounding=rounding)
@@ -46,6 +55,7 @@ def split_ofi_to_split_ofi(folder_path: str, temp_path: str, out_path: str, buck
                            tickers: str = None, start_date: str = None, end_date: str = None, rounding: bool = True,
                            rolling_size: int = None, remove_after_process: bool = True, archive_output: bool = True,
                            parallel_jobs: int = 1):
+    tickers = process_tickers(tickers)
     start_date = process_date(start_date)
     end_date = process_date(end_date)
     bucket_ofi_props = BucketOFIProps(levels=LEVELS, bucket_size=bucket_size, rounding=rounding,
@@ -65,19 +75,37 @@ def split_ofi_to_split_ofi(folder_path: str, temp_path: str, out_path: str, buck
 @main.command()
 def multiday(folder_path: str, temp_path: str, out_file: str, bucket_size: int,
              tickers: str = None, start_date: str = None, end_date: str = None, rounding: bool = True,
-             remove_after_process: bool = True):
+             remove_after_process: bool = True, verbose=True):
+    tickers = process_tickers(tickers)
     start_date = process_date(start_date)
     end_date = process_date(end_date)
     bucket_ofi_props = BucketOFIProps(levels=LEVELS, bucket_size=bucket_size, rounding=rounding,
                                       prev_bucket_size=bucket_size)
 
     archive_processor = SplitOFIArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS,
-                                                 tickers=tickers)
-    file_processor = SplitOFIToMultidayFileProcessor(bucket_ofi_props=bucket_ofi_props)
+                                                 tickers=tickers, verbose=verbose)
+    file_processor = SplitOFIToMultidayFileProcessor(bucket_ofi_props=bucket_ofi_props, verbose=verbose)
 
     archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_file,
                                       remove_after_process=remove_after_process, archive_output=False,
                                       extracted_archive_processor=file_processor)
+
+
+@main.command()
+def iceberg_assert(folder_path: str, temp_path: str, tickers: str = None, start_date: str = None, end_date: str = None):
+    tickers = process_tickers(tickers)
+    start_date = process_date(start_date)
+    end_date = process_date(end_date)
+    archive_processor = L3ArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS, tickers=tickers)
+
+    def assert_fn(row: pd.Series()) -> ():
+        if row['event_type'] in [4, 5]:
+            assert (abs(row['ofi_1']) > 1e-9)
+
+    file_processor = DataAssertFileProcessor(file_filter=archive_processor.file_filter, assert_fn=assert_fn)
+    archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=None,
+                                      extracted_archive_processor=file_processor, remove_after_process=True,
+                                      archive_output=False)
 
 
 if __name__ == '__main__':

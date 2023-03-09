@@ -14,25 +14,25 @@ def read_csv(file: str, process_df) -> (np.ndarray, np.ndarray):
 
 
 class LinRegModel(ABC):
-    def __init__(self, train_df: pd.DataFrame, test_df: pd.DataFrame = None):
+    def __init__(self):
         self.model = None
         self.results = None
-        self.train_data = self.process_df(train_df)
-        self.test_data = self.process_df(test_df) if test_df is not None else None
+        # self.train_data = self.process_df(train_df)
+        # self.test_data = self.process_df(test_df) if test_df is not None else None
         self.tst_txt = ''
         self.tst_r2 = None
         self.lr_model = None
         self.name = None
 
-    def fit(self) -> ():
-        x, y = self.train_data
+    def fit(self, train_df) -> ():
+        x, y = self.process_df(train_df)
         self.model = sm.OLS(y, sm.add_constant(x))
         self.results = self.model.fit()
         self.lr_model = LinearRegression().fit(x, y)
 
-    def score_test(self) -> ():
-        if self.test_data:
-            x, y = self.test_data
+    def score_test(self, test_df) -> ():
+        if test_df is not None:
+            x, y = self.process_df(test_df)
             r2 = self.lr_model.score(x, y)
             self.tst_r2 = r2
             self.tst_txt = f'Out-of-sample r^2: {r2}'
@@ -48,16 +48,22 @@ class LinRegModel(ABC):
         df = pd.DataFrame(df, index=[0])
         return df
 
+    def get_adj_r2(self):
+        return self.results.rsquared_adj
+
+    def get_oos_r2(self):
+        return self.tst_r2
+
     @abstractmethod
     def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
         pass
 
 
 class SplitOFIModel(LinRegModel):
-    def __init__(self, train_df: pd.DataFrame, levels: int, return_type: str, test_df: pd.DataFrame = None):
+    def __init__(self, levels: int, return_type: str):
         self.levels = levels
         self.return_col = 'return_now' if return_type == 'current' else 'return_future'
-        super().__init__(train_df, test_df)
+        super().__init__()
         self.name = f"SplitOFI_{levels}_{return_type}"
 
     def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
@@ -69,10 +75,10 @@ class SplitOFIModel(LinRegModel):
 
 
 class OFIModel(LinRegModel):
-    def __init__(self, train_df: pd.DataFrame, levels: int, return_type: str, test_df: pd.DataFrame = None):
+    def __init__(self, levels: int, return_type: str):
         self.levels = levels
         self.return_col = 'return_now' if return_type == 'current' else 'return_future'
-        super().__init__(train_df, test_df)
+        super().__init__()
         self.name = f"OFI_{levels}_{return_type}"
 
     def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):

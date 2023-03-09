@@ -12,6 +12,9 @@ from data_manipulation.bucket_ofi import compute_bucket_ofi_from_files, get_new_
 from data_manipulation.multiday_bucket_ofi import prepare_df_for_multiday, MultidayProps
 from data_manipulation.file_filters import FileFilter, L3ArchiveFilter, L3FileFilter, SplitOFIFileFilter, \
     SplitOFIArchiveFilter, intersect_dates
+from data_manipulation.message import get_message_df
+from data_manipulation.orderbook import get_orderbook_df
+from data_manipulation.tick_ofi import compute_tick_ofi_df
 
 VERBOSE = True
 
@@ -105,6 +108,32 @@ class SplitOFIToSplitOFIFileProcessor(ExtractedArchiveProcessor):
         return name
 
 
+class DataAssertFileProcessor(ExtractedArchiveProcessor):
+    def __init__(self, file_filter: FileFilter, assert_fn, parallel_jobs: int = 1, verbose: bool = VERBOSE):
+        super().__init__(parallel_jobs, verbose)
+        self.file_filter = file_filter
+        self.assert_fn = assert_fn
+
+    def process_file(self, file_name: str, folder_path: str, out_path: str):
+        [ticker, d, _, _, file_type, lvl] = file_name[:-4].split('_')
+        if file_type == 'message':
+            if self.verbose:
+                print(f"Processing {file_name}...")
+            message_file_name = file_name
+            orderbook_file_name = file_name.replace('message', 'orderbook')
+            message_file_path = os.path.join(folder_path, message_file_name)
+            orderbook_file_path = os.path.join(folder_path, orderbook_file_name)
+            message_df = get_message_df(message_file_path)
+            orderbook_df = get_orderbook_df(orderbook_file_path, levels=self.file_filter.levels)
+            # tick_ofi_df = compute_tick_ofi_df(message_df=message_df, orderbook_df=orderbook_df, levels=self.file_filter.levels, trading_hours_only=True)
+            # tick_ofi_df.to_csv(os.path.join(out_path, 'tick_temp.csv'), index=False)
+            for _, row in tick_ofi_df.iterrows():
+                self.assert_fn(row)
+
+    def get_new_archive_name(self, old_archive_name: str):
+        pass
+
+
 class SplitOFIToMultidayFileProcessor(ExtractedArchiveProcessor):
     def __init__(self, bucket_ofi_props: BucketOFIProps, verbose: bool = VERBOSE):
         super().__init__(parallel_jobs=1, verbose=verbose)
@@ -161,7 +190,8 @@ class ArchiveProcessor(ABC):
                         archive_output: bool, extracted_archive_processor: ExtractedArchiveProcessor):
         folder_path = os.path.abspath(folder_path)
         temp_path = os.path.abspath(temp_path)
-        out_path = os.path.abspath(out_path)
+        if out_path is not None:
+            out_path = os.path.abspath(out_path)
 
         # Find valid archives
         file_list = os.listdir(path=folder_path)

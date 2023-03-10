@@ -39,5 +39,6 @@ def get_day_df(folder_path: str, temp_path: str, d: date, bucket_size: int, tick
     data_process.multiday(folder_path=folder_path, temp_path=temp_path, out_file=temp_file, bucket_size=bucket_size,
                           start_date=str(d), end_date=str(d), tickers=tickers, verbose=False)
     df = get_multiday_df(temp_file)
-    os.remove(temp_file)
+    if os.path.exists(temp_file):
+        os.remove(temp_file)
     return df

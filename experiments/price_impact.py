@@ -10,8 +10,10 @@ import pickle
 from statistics import mean, stdev
 from joblib import Parallel, delayed
 
+
 def transpose(l):
     return list(map(list, zip(*l)))
+
 
 class Results:
     def __init__(self, ins_r2, oos_r2, params, tvalues):
@@ -19,6 +21,7 @@ class Results:
         self.oos_r2 = oos_r2
         self.params = params
         self.tvalues = tvalues
+
 
 def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_size: int, in_sample_size: int,
                    os_size: int = None,
@@ -79,7 +82,10 @@ def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_s
 
         avg_r2_ins = mean(loc_ins_r2)
         avg_r2_oos = mean(loc_oos_r2)
-        print(f'{ticker} --- INS : {avg_r2_ins} ; {stdev(loc_ins_r2)} --- OOS: {avg_r2_oos} ; {stdev(loc_oos_r2)}', flush=True)
+        print(f'{ticker} --- INS : {avg_r2_ins} ; {stdev(loc_ins_r2)} --- OOS: {avg_r2_oos} ; {stdev(loc_oos_r2)}',
+              flush=True)
+        print(f'{ticker} --- INS : {avg_r2_ins} ; {stdev(loc_ins_r2)} --- OOS: {avg_r2_oos} ; {stdev(loc_oos_r2)}',
+              file=sys.stderr, flush=True)
         # print(f'R2 Out of Sample : {avg_r2_oos}')
 
         results_file = os.path.join(results_path, ticker)
@@ -87,7 +93,8 @@ def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_s
         f.write('\n'.join([str(loc_ins_r2), str(loc_oos_r2), str(loc_params), str(loc_tvalues)]))
         f.write('\n\n')
         for i in range(31):
-            f.write(f'{mean(loc_params[i])} ; {stdev(loc_params[i])} ; {mean(loc_tvalues[i])} ; {stdev(loc_tvalues[i])}\n')
+            f.write(
+                f'{mean(loc_params[i])} ; {stdev(loc_params[i])} ; {mean(loc_tvalues[i])} ; {stdev(loc_tvalues[i])}\n')
         f.close()
 
         res = Results(loc_ins_r2, loc_oos_r2, loc_params, loc_tvalues)

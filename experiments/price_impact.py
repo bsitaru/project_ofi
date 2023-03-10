@@ -5,12 +5,20 @@ import constants
 import math
 import sys
 import os
+import pickle
 
 from statistics import mean, stdev
 from joblib import Parallel, delayed
 
 def transpose(l):
     return list(map(list, zip(*l)))
+
+class Results:
+    def __init__(self, ins_r2, oos_r2, params, tvalues):
+        self.ins_r2 = ins_r2
+        self.oos_r2 = oos_r2
+        self.params = params
+        self.tvalues = tvalues
 
 def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_size: int, in_sample_size: int,
                    os_size: int = None,
@@ -43,7 +51,7 @@ def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_s
         loc_tvalues = []
 
         for d in dates:
-            print(f"Running {d}...", file=sys.stderr)
+            print(f"Running {d} - {ticker}...", file=sys.stderr)
             df = loader.get_day_df(folder_path=folder_path, temp_path=temp_path, d=d, bucket_size=bucket_size,
                                    tickers=[ticker])
             start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
@@ -82,10 +90,14 @@ def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_s
             f.write(f'{mean(loc_params[i])} ; {stdev(loc_params[i])} ; {mean(loc_tvalues[i])} ; {stdev(loc_tvalues[i])}\n')
         f.close()
 
-        nonlocal ins_r2
-        nonlocal oos_r2
-        ins_r2 += loc_ins_r2
-        oos_r2 += loc_oos_r2
+        res = Results(loc_ins_r2, loc_oos_r2, loc_params, loc_tvalues)
+        with open(os.path.join(results_path, ticker + '.pickle'), 'wb') as f:
+            pickle.dump(res, f)
+
+        # nonlocal ins_r2
+        # nonlocal oos_r2
+        # ins_r2 += loc_ins_r2
+        # oos_r2 += loc_oos_r2
 
     # for ticker in tickers:
     #     run_experiment_for_ticker(ticker)

@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import py7zr
 
@@ -17,6 +18,9 @@ from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
 
 VERBOSE = True
+
+def log(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
 class ExtractedArchiveProcessor(ABC):
@@ -51,7 +55,7 @@ class L3ToSplitOFIFileProcessor(ExtractedArchiveProcessor):
         [ticker, d, _, _, file_type, lvl] = file_name[:-4].split('_')
         if file_type == 'message':
             if self.verbose:
-                print(f"Processing {file_name}...")
+                log(f"Processing {file_name}...")
             message_file_name = file_name
             orderbook_file_name = file_name.replace('message', 'orderbook')
             message_file_path = os.path.join(folder_path, message_file_name)
@@ -85,7 +89,7 @@ class SplitOFIToSplitOFIFileProcessor(ExtractedArchiveProcessor):
     def process_file(self, file_name: str, folder_path: str, out_path: str):
         [ticker, d, _, _] = file_name[:-4].split('_')
         if self.verbose:
-            print(f"Processing {file_name}...")
+            log(f"Processing {file_name}...")
         file_path = os.path.join(folder_path, file_name)
         df = get_bucket_ofi_df(file_path)
         df = compute_bucket_ofi_df_from_bucket_ofi(df, props=self.bucket_ofi_props)
@@ -118,7 +122,7 @@ class DataAssertFileProcessor(ExtractedArchiveProcessor):
         [ticker, d, _, _, file_type, lvl] = file_name[:-4].split('_')
         if file_type == 'message':
             if self.verbose:
-                print(f"Processing {file_name}...")
+                log(f"Processing {file_name}...")
             message_file_name = file_name
             orderbook_file_name = file_name.replace('message', 'orderbook')
             message_file_path = os.path.join(folder_path, message_file_name)
@@ -143,7 +147,7 @@ class SplitOFIToMultidayFileProcessor(ExtractedArchiveProcessor):
     def process_file(self, file_name: str, folder_path: str, out_path: str):
         out_file = out_path
         if self.verbose:
-            print(f"Processing {file_name}...")
+            log(f"Processing {file_name}...")
         file_path = os.path.join(folder_path, file_name)
         df = get_bucket_ofi_df(file_path)
         df = prepare_df_for_multiday(df, file_name)
@@ -166,7 +170,7 @@ class ArchiveProcessor(ABC):
     def _extract_files_from_archive(self, archive_name: str, folder_path: str, out_path: str, flt: FileFilter) -> ():
         if os.path.exists(out_path):
             if self.verbose:
-                print(f"Archive already extracted {archive_name}")
+                log(f"Archive already extracted {archive_name}")
             return
 
         os.mkdir(out_path)
@@ -178,7 +182,7 @@ class ArchiveProcessor(ABC):
 
     def _create_archive(self, archive_name: str, folder_path: str, out_path: str):
         if self.verbose:
-            print(f"Creating archive {archive_name}...")
+            log(f"Creating archive {archive_name}...")
         new_archive_path = os.path.join(out_path, archive_name)
         archive = py7zr.SevenZipFile(new_archive_path, 'w')
         file_list = os.listdir(folder_path)
@@ -200,7 +204,7 @@ class ArchiveProcessor(ABC):
         for archive_name in archive_list:
             try:
                 if self.verbose:
-                    print(f"Processing Archive {archive_name}...")
+                    log(f"Processing Archive {archive_name}...")
 
                 temp_folder = os.path.join(temp_path, archive_name)
                 self._extract_files_from_archive(archive_name=archive_name, folder_path=folder_path,
@@ -227,7 +231,7 @@ class ArchiveProcessor(ABC):
                         shutil.rmtree(new_out_path)
 
             except FileExistsError:
-                print(f"Archive is already processing? {archive_name}")
+                log(f"Archive is already processing? {archive_name}")
 
 
 class L3ArchiveProcessor(ArchiveProcessor):

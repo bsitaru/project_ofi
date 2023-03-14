@@ -80,7 +80,8 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
     # !!! There should always be at least an order on the market during the whole day.
     for i in range(1, props.levels + 1):
         for name in OFI_NAMES:
-            df[f"{name}_{i}"] = np.divide(df[f"{name}_{i}"], df[f"volume_{i}"], out=np.ones_like(df[f"{name}_{i}"]),
+            df[f"{name}_{i}"] = np.divide(df[f"{name}_{i}"], df[f"volume_{i}"],
+                                          out=np.ones_like(df[f"{name}_{i}"], dtype=float),
                                           where=df[f"volume_{i}"] != 0)
 
     # Find missing buckets and set values for them

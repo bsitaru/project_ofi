@@ -34,12 +34,12 @@ def get_single_day_df(folder_path: str, temp_path: str, d: date, tickers: list[s
     temp_file = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20)) + '_' + str(d) + '.csv'
     temp_file = os.path.join(temp_path, temp_file)
 
-    temp_folder = random.choices(string.ascii_uppercase + string.digits, k=20)
+    temp_folder = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
     temp_path = os.path.join(temp_path, temp_folder)
     os.mkdir(temp_path)
 
-    data_process.multiday(folder_path=folder_path, temp_path=temp_path, out_file=temp_file,
-                          start_date=d, end_date=d, tickers=tickers, verbose=False)
+    data_process.multiday_process(folder_path=folder_path, temp_path=temp_path, out_file=temp_file,
+                                  start_date=d, end_date=d, tickers=tickers, verbose=False)
     df = get_multiday_df(temp_file)
     if os.path.exists(temp_file):
         os.remove(temp_file)

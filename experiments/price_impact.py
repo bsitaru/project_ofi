@@ -6,6 +6,7 @@ import math
 import sys
 import os
 import pickle
+import data_loader.dates as dts
 
 from statistics import mean, stdev
 from joblib import Parallel, delayed
@@ -23,21 +24,24 @@ class Results:
         self.tvalues = tvalues
 
 
-def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_size: int, in_sample_size: int,
-                   os_size: int = None,
-                   rolling: int = None, tickers: list[str] = None, start_date: date = None, end_date: date = None,
-                   parallel_jobs: int = 1):
+def run_experiment(folder_path: str, temp_path: str, results_path: str, in_sample_size: int, model_name: str,
+                   os_size: int = None, rolling: int = None, tickers: list[str] = None, start_date: date = None,
+                   end_date: date = None, parallel_jobs: int = 1):
     os_size = in_sample_size if os_size is None else os_size
     rolling = in_sample_size if rolling is None else rolling
 
     def create_model():
-        return SplitOFIModel(levels=10, return_type='current')
+        if model_name == 'OFI':
+            return OFIModel(levels=10, return_type='current')
+        elif model_name == 'SplitOFI':
+            return SplitOFIModel(levels=10, return_type='current')
+        return None
 
     ins_r2 = []
     oos_r2 = []
 
     def run_experiment_for_ticker(ticker: str):
-        dates = loader.get_dates_from_archive_files(folder_path=folder_path, tickers=[ticker])
+        dates = dts.get_dates_from_archive_files(folder_path=folder_path, tickers=[ticker])
 
         def filter_date(d: date):
             if start_date is not None and d < start_date:
@@ -55,8 +59,8 @@ def run_experiment(folder_path: str, temp_path: str, results_path: str, bucket_s
 
         for d in dates:
             print(f"Running {d} - {ticker}...", file=sys.stderr)
-            df = loader.get_day_df(folder_path=folder_path, temp_path=temp_path, d=d, bucket_size=bucket_size,
-                                   tickers=[ticker])
+            df = loader.get_single_day_df(folder_path=folder_path, temp_path=temp_path, d=d,
+                                          tickers=[ticker])
             start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
             end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - os_size - in_sample_size + 1
             for t in range(start_time, end_time + 1, rolling):

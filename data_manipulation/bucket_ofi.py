@@ -4,7 +4,8 @@ import numpy as np
 
 from datetime import date
 
-from constants import OFI_TYPES, OFI_NAMES, OFI_COLS, VOLUME_COLS, START_TRADE, END_TRADE, ROUNDING, ROUNDING_RET
+from constants import OFI_TYPES, OFI_NAMES, OFI_COLS, VOLUME_COLS, ROUNDING, ROUNDING_RET, \
+    START_TIME, END_TIME
 
 from data_manipulation.message import get_message_df
 from data_manipulation.orderbook import get_orderbook_df
@@ -21,12 +22,14 @@ c_dtype['event_count'] = int
 
 class BucketOFIProps:
     def __init__(self, levels: int, bucket_size: int, rounding: bool, prev_bucket_size: int = None,
-                 rolling_size: int = None):
+                 rolling_size: int = None, start_time: int = START_TIME, end_time: int = END_TIME):
         self.levels = levels
         self.bucket_size = bucket_size
         self.prev_bucket_size = prev_bucket_size
         self.rounding = rounding
         self.rolling_size = rolling_size if rolling_size is not None else bucket_size
+        self.start_time = start_time
+        self.end_time = end_time
 
 
 def compute_return_now(start_price: pd.Series, end_price: pd.Series):
@@ -77,10 +80,11 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
     # !!! There should always be at least an order on the market during the whole day.
     for i in range(1, props.levels + 1):
         for name in OFI_NAMES:
-            df[f"{name}_{i}"] /= df[f"volume_{i}"]
+            df[f"{name}_{i}"] = np.divide(df[f"{name}_{i}"], df[f"volume_{i}"], out=np.ones_like(df[f"{name}_{i}"]),
+                                          where=df[f"volume_{i}"] != 0)
 
     # Find missing buckets and set values for them
-    all_indices = pd.Index(range(START_TRADE, END_TRADE, props.bucket_size)).astype(int)
+    all_indices = pd.Index(range(props.start_time, props.end_time, props.bucket_size)).astype(int)
     now_indices = df.index
     missing_indices = all_indices.difference(now_indices)
     prev_index = now_indices[np.searchsorted(now_indices, missing_indices) - 1]
@@ -167,5 +171,8 @@ def compute_bucket_ofi_from_files(message_file: str, orderbook_file: str, props:
 
 
 def get_bucket_ofi_df(file_path: str) -> pd.DataFrame:
-    df = pd.read_csv(file_path, dtype=c_dtype)
-    return df
+    try:
+        df = pd.read_csv(file_path, dtype=c_dtype)
+        return df
+    except:
+        return pd.DataFrame(columns=list(c_dtype.keys()))

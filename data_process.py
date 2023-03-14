@@ -20,6 +20,21 @@ def process_tickers(tickers: str):
     return tickers.split(' ')
 
 
+def multiday_process(folder_path: str, temp_path: str, out_file: str, tickers: list[str] = None,
+                     start_date: date = None, end_date: date = None,
+                     remove_after_process: bool = True, verbose=True):
+    # bucket_ofi_props = BucketOFIProps(levels=LEVELS, bucket_size=bucket_size, rounding=rounding,
+    #                                   prev_bucket_size=bucket_size)
+
+    archive_processor = SplitOFIArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS,
+                                                 tickers=tickers, verbose=verbose)
+    file_processor = SplitOFIToMultidayFileProcessor(verbose=verbose)
+
+    archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_file,
+                                      remove_after_process=remove_after_process, archive_output=False,
+                                      extracted_archive_processor=file_processor)
+
+
 def get_flt_and_bucket_ofi_props(tickers, start_date, end_date, bucket_size, rounding):
     if tickers is not None:
         tickers = tickers.split(' ')
@@ -73,22 +88,16 @@ def split_ofi_to_split_ofi(folder_path: str, temp_path: str, out_path: str, buck
 
 
 @main.command()
-def multiday(folder_path: str, temp_path: str, out_file: str, bucket_size: int,
-             tickers: str = None, start_date: str = None, end_date: str = None, rounding: bool = True,
+def multiday(folder_path: str, temp_path: str, out_file: str,
+             tickers: str = None, start_date: str = None, end_date: str = None,
              remove_after_process: bool = True, verbose=True):
     tickers = process_tickers(tickers)
     start_date = process_date(start_date)
     end_date = process_date(end_date)
-    bucket_ofi_props = BucketOFIProps(levels=LEVELS, bucket_size=bucket_size, rounding=rounding,
-                                      prev_bucket_size=bucket_size)
 
-    archive_processor = SplitOFIArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS,
-                                                 tickers=tickers, verbose=verbose)
-    file_processor = SplitOFIToMultidayFileProcessor(bucket_ofi_props=bucket_ofi_props, verbose=verbose)
-
-    archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_file,
-                                      remove_after_process=remove_after_process, archive_output=False,
-                                      extracted_archive_processor=file_processor)
+    multiday_process(folder_path=folder_path, temp_path=temp_path, out_file=out_file, tickers=tickers,
+                     start_date=start_date, end_date=end_date, remove_after_process=remove_after_process,
+                     verbose=verbose)
 
 
 @main.command()

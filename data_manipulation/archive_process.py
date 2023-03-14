@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 
 from data_manipulation.bucket_ofi import compute_bucket_ofi_from_files, get_new_bucket_ofi_file_name, \
     get_bucket_ofi_df, compute_bucket_ofi_df_from_bucket_ofi, BucketOFIProps
-from data_manipulation.multiday_bucket_ofi import prepare_df_for_multiday, MultidayProps
+from data_manipulation.multiday_bucket_ofi import prepare_df_for_multiday
 from data_manipulation.file_filters import FileFilter, L3ArchiveFilter, L3FileFilter, SplitOFIFileFilter, \
     SplitOFIArchiveFilter, intersect_dates
 from data_manipulation.message import get_message_df
@@ -125,7 +125,8 @@ class DataAssertFileProcessor(ExtractedArchiveProcessor):
             orderbook_file_path = os.path.join(folder_path, orderbook_file_name)
             message_df = get_message_df(message_file_path)
             orderbook_df = get_orderbook_df(orderbook_file_path, levels=self.file_filter.levels)
-            # tick_ofi_df = compute_tick_ofi_df(message_df=message_df, orderbook_df=orderbook_df, levels=self.file_filter.levels, trading_hours_only=True)
+            tick_ofi_df = compute_tick_ofi_df(message_df=message_df, orderbook_df=orderbook_df,
+                                              levels=self.file_filter.levels, trading_hours_only=True)
             # tick_ofi_df.to_csv(os.path.join(out_path, 'tick_temp.csv'), index=False)
             for _, row in tick_ofi_df.iterrows():
                 self.assert_fn(row)
@@ -135,9 +136,9 @@ class DataAssertFileProcessor(ExtractedArchiveProcessor):
 
 
 class SplitOFIToMultidayFileProcessor(ExtractedArchiveProcessor):
-    def __init__(self, bucket_ofi_props: BucketOFIProps, verbose: bool = VERBOSE):
+    def __init__(self, verbose: bool = VERBOSE):
+        # Cannot be done in parallel
         super().__init__(parallel_jobs=1, verbose=verbose)
-        self.bucket_ofi_props = bucket_ofi_props
 
     def process_file(self, file_name: str, folder_path: str, out_path: str):
         out_file = out_path
@@ -145,8 +146,7 @@ class SplitOFIToMultidayFileProcessor(ExtractedArchiveProcessor):
             print(f"Processing {file_name}...")
         file_path = os.path.join(folder_path, file_name)
         df = get_bucket_ofi_df(file_path)
-        df = prepare_df_for_multiday(df, file_name,
-                                     props=MultidayProps(bucket_size=self.bucket_ofi_props.bucket_size))
+        df = prepare_df_for_multiday(df, file_name)
         if os.path.exists(out_path):
             df.to_csv(out_file, mode='a', index=False, header=False)
         else:
@@ -215,7 +215,8 @@ class ArchiveProcessor(ABC):
 
                 out_folder = new_out_path if archive_output else out_path
 
-                extracted_archive_processor.process_folder(folder_path=temp_folder, out_path=out_folder)
+                if extracted_archive_processor is not None:
+                    extracted_archive_processor.process_folder(folder_path=temp_folder, out_path=out_folder)
 
                 if remove_after_process:
                     shutil.rmtree(temp_folder)

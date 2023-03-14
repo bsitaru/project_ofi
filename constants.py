@@ -8,6 +8,9 @@ START_TRADE = (9 * 60 + 30) * 60  # 09:30
 END_TRADE = (16 * 60 + 0) * 60  # 16:00
 VOLATILE_TIMEFRAME = 30 * 60  # volatile period to not consider
 
+START_TIME = START_TRADE + VOLATILE_TIMEFRAME
+END_TIME = END_TRADE - VOLATILE_TIMEFRAME
+
 BUCKET_SIZE = 10  # seconds
 
 

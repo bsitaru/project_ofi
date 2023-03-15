@@ -58,9 +58,6 @@ def round_df(df: pd.DataFrame) -> ():
 
 
 def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps) -> pd.DataFrame:
-    # Remove data outside range
-    df.drop(df[(df['time'] < props.start_time) | (df['time'] >= props.end_time)].index, inplace=True)
-
     # Compute start time of bucket
     df['start_time'] = (df['time'] // props.bucket_size).astype(int) * props.bucket_size
 
@@ -99,6 +96,9 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
     for (idx, prv) in zip(missing_indices, prev_index):
         df.loc[idx, 'start_price'] = df.loc[prv, 'end_price']
         df.loc[idx, 'end_price'] = df.loc[prv, 'end_price']
+
+    # Remove data outside range
+    df.drop(df[(df['time'] < props.start_time) | (df['time'] >= props.end_time)].index, inplace=True)
 
     if props.rounding:
         round_df(df)

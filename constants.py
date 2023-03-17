@@ -20,5 +20,7 @@ def levels_list(name: str, levels: int = LEVELS) -> list[str]:
 
 OFI_TYPES = ['add', 'cancel', 'trade']
 OFI_NAMES = ['ofi', 'ofi_add', 'ofi_cancel', 'ofi_trade']
+SPLIT_OFI_NAMES = ['ofi_add', 'ofi_cancel', 'ofi_trade']
 OFI_COLS = sum([levels_list(i) for i in OFI_NAMES], [])
+SPLIT_OFI_COLS = sum([levels_list(i) for i in SPLIT_OFI_NAMES], [])
 VOLUME_COLS = levels_list('volume')

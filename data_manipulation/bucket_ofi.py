@@ -1,19 +1,19 @@
 # Bucket OFI - aggregate OFI into buckets
+# Computes split ofi (not normalised) and average volume for each level in bucket
 import pandas as pd
 import numpy as np
 
 from datetime import date
 
-from constants import OFI_TYPES, OFI_NAMES, OFI_COLS, VOLUME_COLS, ROUNDING, ROUNDING_RET, \
+from constants import OFI_TYPES, SPLIT_OFI_NAMES, SPLIT_OFI_COLS, VOLUME_COLS, ROUNDING, ROUNDING_RET, \
     START_TIME, END_TIME
 
 from data_manipulation.message import get_message_df
 from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
 
-bucket_ofi_cols = ['start_time', 'event_count', 'start_price', 'end_price', 'return_now',
-                   'return_future'] + OFI_COLS + VOLUME_COLS
-sum_cols = OFI_COLS + VOLUME_COLS + ['event_count']
+bucket_ofi_cols = ['start_time', 'event_count', 'return', 'start_price', 'end_price'] + SPLIT_OFI_COLS + VOLUME_COLS
+sum_cols = SPLIT_OFI_COLS + VOLUME_COLS + ['event_count']
 
 c_dtype = {c: float for c in bucket_ofi_cols}
 c_dtype['start_time'] = int
@@ -32,15 +32,8 @@ class BucketOFIProps:
         self.end_time = end_time
 
 
-def compute_return_now(start_price: pd.Series, end_price: pd.Series):
-    return np.log(end_price / start_price)
-
-
-def compute_start_price_in_bucket(start_price: pd.Series, end_price: np.ndarray) -> np.ndarray:
-    # Set the start price in a bucket as the previous end price.
-    ret = np.roll(end_price, 1)
-    ret[:1] = start_price.iloc[0]
-    return ret
+def compute_return(start_price: pd.Series, end_price: pd.Series):
+    return np.log(end_price / start_price, out=np.zeros_like(start_price, dtype=float), where=start_price != 0)
 
 
 def compute_return_future(return_now: pd.Series, roll: int = 1):
@@ -58,6 +51,9 @@ def round_df(df: pd.DataFrame) -> ():
 
 
 def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps) -> pd.DataFrame:
+    # Remove data outside range
+    df.drop(df[(df['time'] < props.start_time) | (df['time'] >= props.end_time)].index, inplace=True)
+
     # Compute start time of bucket
     df['start_time'] = (df['time'] // props.bucket_size).astype(int) * props.bucket_size
 
@@ -67,38 +63,37 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
             df[f"ofi_{t}_{i}"] = np.where(df["ofi_type"] == t, df[f"ofi_{i}"], 0)
 
     group_df = df.groupby('start_time')
-    df = group_df[OFI_COLS].agg('sum')
+    df = group_df[SPLIT_OFI_COLS].agg('sum')
     df[VOLUME_COLS] = group_df[VOLUME_COLS].agg('mean')
-    df['start_price'] = group_df.apply(lambda df: df['price'].tolist()[0])
-    df['end_price'] = group_df.apply(lambda df: df['price'].tolist()[-1])
-    df['start_price'] = compute_start_price_in_bucket(df['start_price'], df['end_price'])
+    df['start_price'] = group_df.apply(lambda df: df['start_price'].tolist()[0])
+    df['end_price'] = group_df.apply(lambda df: df['end_price'].tolist()[-1])
     df['event_count'] = group_df.agg('size')
-    df['return_now'] = compute_return_now(df['start_price'], df['end_price'])
-    df['return_future'] = compute_return_future(df['return_now'])
+    df['return'] = compute_return(df['start_price'], df['end_price'])
+    # df['return_future'] = compute_return_future(df['return_now'])
 
     # Compute normalized OFI
     # !!! There should always be at least an order on the market during the whole day.
-    for i in range(1, props.levels + 1):
-        for name in OFI_NAMES:
-            df[f"{name}_{i}"] = np.divide(df[f"{name}_{i}"], df[f"volume_{i}"],
-                                          out=np.ones_like(df[f"{name}_{i}"], dtype=float),
-                                          where=df[f"volume_{i}"] != 0)
+    # for i in range(1, props.levels + 1):
+    #     for name in SPLIT_OFI_NAMES:
+    #         df[f"{name}_{i}"] = np.divide(df[f"{name}_{i}"], df[f"volume_{i}"],
+    #                                       out=np.ones_like(df[f"{name}_{i}"], dtype=float),
+    #                                       where=df[f"volume_{i}"] != 0)
 
     # Find missing buckets and set values for them
     all_indices = pd.Index(range(props.start_time, props.end_time, props.bucket_size)).astype(int)
     now_indices = df.index
+    first_idx = props.end_time + 1 if len(now_indices) == 0 else now_indices[0]
     missing_indices = all_indices.difference(now_indices)
+    missing_indices = missing_indices[missing_indices >= first_idx]
     prev_index = now_indices[np.searchsorted(now_indices, missing_indices) - 1]
+    prev_prices = df.loc[prev_index, 'end_price']
 
     df = df.reindex(all_indices, fill_value=0, copy=False)
     df['start_time'] = df.index
     # Set start and end price for missing buckets as the previous end price
-    for (idx, prv) in zip(missing_indices, prev_index):
-        df.loc[idx, 'start_price'] = df.loc[prv, 'end_price']
-        df.loc[idx, 'end_price'] = df.loc[prv, 'end_price']
-
-    # Remove data outside range
-    df.drop(df[(df['time'] < props.start_time) | (df['time'] >= props.end_time)].index, inplace=True)
+    for (idx, prv) in zip(missing_indices, prev_prices):
+        df.loc[idx, 'start_price'] = prv
+        df.loc[idx, 'end_price'] = prv
 
     if props.rounding:
         round_df(df)
@@ -112,9 +107,12 @@ def compute_bucket_ofi_df_from_bucket_ofi(df: pd.DataFrame, props: BucketOFIProp
             f"New bucket size is not a multiple of previous bucket size! {props.prev_bucket_size} ; {props.bucket_size}")
 
     # Recompute sum of OFIs and sum of volumes
+    # for i in range(1, props.levels + 1):
+    #     for name in SPLIT_OFI_NAMES:
+    #         df[f"{name}_{i}"] *= df[f"volume_{i}"]
+    #     df[f"volume_{i}"] *= df['event_count']
+
     for i in range(1, props.levels + 1):
-        for name in OFI_NAMES:
-            df[f"{name}_{i}"] *= df[f"volume_{i}"]
         df[f"volume_{i}"] *= df['event_count']
 
     # Compute new start time
@@ -132,24 +130,31 @@ def compute_bucket_ofi_df_from_bucket_ofi(df: pd.DataFrame, props: BucketOFIProp
                          'start_price': first_element,
                          'end_price': last_element,
                          **{c: 'sum' for c in sum_cols}})
-    df['return_now'] = compute_return_now(df['start_price'], df['end_price'])
-    df['return_future'] = compute_return_future(df['return_now'], roll=window_size)
+    df['return'] = compute_return(df['start_price'], df['end_price'])
+    # df['return_future'] = compute_return_future(df['return_now'], roll=window_size)
 
     pd.DataFrame.dropna(df, inplace=True)
 
-    df['start_time'] = df['start_time'].astype(int)
-    df['event_count'] = df['event_count'].astype(int)
+    for c in SPLIT_OFI_COLS + ['start_time', 'event_count']:
+        df[c] = df[c].astype(int)
+    # df['start_time'] = df['start_time'].astype(int)
+    # df['event_count'] = df['event_count'].astype(int)
 
     df.drop(df[df['start_time'] % props.rolling_size != 0].index, inplace=True)
 
+    # Compute normalised OFI
+    # for i in range(1, props.levels + 1):
+    #     volume_col = f"volume_{i}"
+    #     df[volume_col] = np.divide(df[volume_col], df["event_count"], out=np.zeros_like(df[volume_col]),
+    #                                where=df["event_count"] != 0)
+    #     for name in SPLIT_OFI_NAMES:
+    #         ofi_col = f"{name}_{i}"
+    #         df[ofi_col] = np.divide(df[ofi_col], df[volume_col], out=np.zeros_like(df[ofi_col]),
+    #                                 where=df[volume_col] != 0)
+
     for i in range(1, props.levels + 1):
-        volume_col = f"volume_{i}"
-        df[volume_col] = np.divide(df[volume_col], df["event_count"], out=np.zeros_like(df[volume_col]),
-                                   where=df["event_count"] != 0)
-        for name in OFI_NAMES:
-            ofi_col = f"{name}_{i}"
-            df[ofi_col] = np.divide(df[ofi_col], df[volume_col], out=np.zeros_like(df[ofi_col]),
-                                    where=df[volume_col] != 0)
+        c = f"volume_{i}"
+        df[c] = np.divide(df[c], df['event_count'], out=np.zeros_like(df[c], dtype=float), where=df['event_count'] != 0)
 
     if props.rounding:
         round_df(df)

@@ -23,7 +23,8 @@ def compute_ofi_levels(orderbook_df: pd.DataFrame, levels: int) -> pd.DataFrame:
         df[f"volume_{i}"] = (df[f"bid_size_{i}"] + df[f"ask_size_{i}"]) / 2.0
 
     # Represent price as mean of bid and ask price. Divide by 10000 because LOBSTER data is stored in this way.
-    df["price"] = (df['bid_price_1'] + df['ask_price_1']) / 20000.0
+    df["start_price"] = (df['prev_bid_price_1'] + df['prev_ask_price_1']) / 20000.0
+    df["end_price"] = (df['bid_price_1'] + df['ask_price_1']) / 20000.0
 
     return df
 
@@ -38,8 +39,7 @@ def compute_ofi_type(message_df: pd.DataFrame) -> np.ndarray:
     return ans
 
 
-def compute_tick_ofi_df(message_df: pd.DataFrame, orderbook_df: pd.DataFrame, levels: int,
-                        trading_hours_only: bool = True) -> pd.DataFrame:
+def compute_tick_ofi_df(message_df: pd.DataFrame, orderbook_df: pd.DataFrame, levels: int) -> pd.DataFrame:
     df = message_df[['time', 'event_type']].copy()
     df['ofi_type'] = compute_ofi_type(message_df)
 
@@ -47,11 +47,8 @@ def compute_tick_ofi_df(message_df: pd.DataFrame, orderbook_df: pd.DataFrame, le
 
     df = pd.concat([df, ofi_df], axis=1)
 
-    cols = ['time', 'price', 'ofi_type', 'event_type'] + \
+    cols = ['time', 'start_price', 'end_price', 'ofi_type', 'event_type'] + \
            [f'ofi_{i}' for i in range(1, levels + 1)] + \
            [f'volume_{i}' for i in range(1, levels + 1)]
-
-    if trading_hours_only:
-        df.drop(df[(START_TRADE > df['time']) | (df['time'] > END_TRADE)].index, inplace=True)
 
     return df[cols]

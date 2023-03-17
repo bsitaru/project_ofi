@@ -62,6 +62,8 @@ class L3ToSplitOFIFileProcessor(ExtractedArchiveProcessor):
             orderbook_file_path = os.path.join(folder_path, orderbook_file_name)
             df = compute_bucket_ofi_from_files(message_file=message_file_path, orderbook_file=orderbook_file_path,
                                                props=self.bucket_ofi_props)
+            if df.empty:    # Do not save file if empty
+                return
             new_file_name = get_new_bucket_ofi_file_name(ticker=ticker, d=d, props=self.bucket_ofi_props)
             new_file_path = os.path.join(out_path, new_file_name)
             df.to_csv(new_file_path, index=False)

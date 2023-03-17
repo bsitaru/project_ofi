@@ -32,6 +32,10 @@ class BucketOFIProps:
         self.end_time = end_time
 
 
+def empty_df():
+    return pd.DataFrame(columns=list(c_dtype.keys()))
+
+
 def compute_return(start_price: pd.Series, end_price: pd.Series):
     return np.log(end_price / start_price, out=np.zeros_like(start_price, dtype=float), where=start_price != 0)
 
@@ -53,6 +57,9 @@ def round_df(df: pd.DataFrame) -> ():
 def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps) -> pd.DataFrame:
     # Remove data outside range
     df.drop(df[(df['time'] < props.start_time) | (df['time'] >= props.end_time)].index, inplace=True)
+
+    if df.empty:
+        return empty_df()
 
     # Compute start time of bucket
     df['start_time'] = (df['time'] // props.bucket_size).astype(int) * props.bucket_size
@@ -184,4 +191,4 @@ def get_bucket_ofi_df(file_path: str) -> pd.DataFrame:
         df = pd.read_csv(file_path, dtype=c_dtype)
         return df
     except:
-        return pd.DataFrame(columns=list(c_dtype.keys()))
+        return empty_df()

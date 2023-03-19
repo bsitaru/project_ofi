@@ -36,11 +36,16 @@ def experiment_for_ticker(folder_path: str, temp_path: str, in_sample_size: int,
             train_df = df[(df['start_time'] >= t) & (df['start_time'] < t + in_sample_size)]
             test_df = df[
                 (df['start_time'] >= t + in_sample_size) & (df['start_time'] < t + in_sample_size + os_size)]
-            if train_df.size == 0 or test_df.size == 0:
+            if train_df.size == 0 or test_df.size == 0 or train_df['event_count'].sum() == 0 or \
+                    test_df['event_count'].sum() == 0:
                 continue
-            model = model_class()
-            results = model.run(train_df, test_df)
-            res_list.append(results)
+
+            try:
+                model = model_class()
+                results = model.run(train_df, test_df)
+                res_list.append(results)
+            except:
+                print(f'Error --- ticker {ticker} --- day {d} --- time {t}', file=sys.stderr, flush=True)
 
     avg_res = AveragedRegressionResults(res_list)
     return avg_res
@@ -59,11 +64,12 @@ def run_experiment_individual(folder_path: str, temp_path: str, results_path: st
                                         os_size=os_size, rolling=rolling, model_class=model_class, ticker=ticker,
                                         start_date=start_date, end_date=end_date)
 
-        results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
-        print(results_text, flush=True)
-        print(results_text, flush=True, file=sys.stderr)
+        if results.values is not None:
+            results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
+            print(results_text, flush=True)
+            print(results_text, flush=True, file=sys.stderr)
 
-        with open(os.path.join(results_path, ticker + '.pickle'), 'wb') as f:
-            pickle.dump(results, f)
+            with open(os.path.join(results_path, ticker + '.pickle'), 'wb') as f:
+                pickle.dump(results, f)
 
     Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in tickers)

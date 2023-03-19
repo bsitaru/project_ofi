@@ -12,14 +12,15 @@ class RegressionResults:
         self.values = np.array(vals)
 
     @staticmethod
-    def from_lin_reg_results(results: statsmodels.regression.linear_model.RegressionResults, os_r2: float,
-                             param_names=None):
+    def from_lin_reg_results(results, os_r2: float, param_names=None):
         return RegressionResults(in_r2=results.rsquared_adj, os_r2=os_r2, param_values=results.params,
                                  tvalues=results.tvalues, param_names=param_names)
 
 
 class AveragedRegressionResults:
     def __init__(self, l: list[RegressionResults]):
+        l = list(filter(lambda x: not self._has_nan(x), l))
+
         if len(l) == 0:
             return
 
@@ -28,3 +29,6 @@ class AveragedRegressionResults:
 
         self.average = np.average(self.values, axis=1)
         self.std = np.std(self.values, axis=1)
+
+    def _has_nan(self, r: RegressionResults):
+        return np.isnan(r.values).any()

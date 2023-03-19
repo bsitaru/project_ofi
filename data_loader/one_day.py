@@ -12,7 +12,7 @@ import string
 
 
 def get_single_date_df_for_ticker(folder_path: str, temp_path: str, d: date, ticker: str):
-    temp_folder = random.choices(string.ascii_uppercase + string.digits, k=20)
+    temp_folder = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
     temp_path = os.path.join(temp_path, temp_folder)
     os.mkdir(temp_path)
     archive_processor = SplitOFIArchiveProcessor(verbose=False, start_date=d, end_date=d, tickers=[ticker])
@@ -24,6 +24,9 @@ def get_single_date_df_for_ticker(folder_path: str, temp_path: str, d: date, tic
     file_path = ''
     if len(file_list) > 0:
         file_path = os.path.join(temp_path, file_list[0])
+        file_list = os.listdir(file_path)
+        if len(file_list) > 0:
+            file_path = os.path.join(file_path, file_list[0])
     df = get_bucket_ofi_df(file_path)
 
     shutil.rmtree(temp_path)

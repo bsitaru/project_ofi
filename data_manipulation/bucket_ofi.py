@@ -5,6 +5,7 @@ import numpy as np
 
 from datetime import date
 
+import constants
 from constants import OFI_TYPES, SPLIT_OFI_NAMES, SPLIT_OFI_COLS, VOLUME_COLS, ROUNDING, ROUNDING_RET, \
     START_TIME, END_TIME
 
@@ -52,6 +53,37 @@ def round_df(df: pd.DataFrame) -> ():
             df[col] = np.around(df[col], decimals=ROUNDING_RET)
         elif df.dtypes[col] == float:
             df[col] = np.around(df[col], decimals=ROUNDING)
+
+
+def is_valid_df(df: pd.DataFrame) -> bool:
+    if df.isna().values.any() or df.isnull().values.any():
+        return False
+    if (df['start_price'] < 0).values.any() or (df['start_price'] > 499999).values.any():
+        return False
+    return True
+
+
+def normalize_ofi(df: pd.DataFrame) -> pd.DataFrame:
+    if not is_valid_df(df):
+        return empty_df()
+    average_vol_size = df[VOLUME_COLS[0]]
+    for c in VOLUME_COLS[1:]:
+        average_vol_size += df[c]
+    for c in SPLIT_OFI_COLS:
+        df[c] = np.divide(df[c], average_vol_size, out=np.zeros_like(df[c], dtype=float), where=average_vol_size != 0)
+    return df
+
+
+def compute_ofi_df_from_split(df: pd.DataFrame) -> pd.DataFrame:
+    if not is_valid_df(df):
+        return empty_df()
+    for i in range(constants.LEVELS):
+        cols = [f"{s}_{i}" for s in SPLIT_OFI_COLS]
+        ofi_col = f"ofi_{i}"
+        df[ofi_col] = df[cols[0]]
+        for c in cols[1:]:
+            df[ofi_col] += df[c]
+    return df
 
 
 def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps) -> pd.DataFrame:

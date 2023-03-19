@@ -1,121 +1,69 @@
 from datetime import date
-from models.lin_reg_model import SplitOFIModel, OFIModel
+from models.lin_reg_model import model_factory
+from models.regression_results import AveragedRegressionResults, RegressionResults
 import data_loader.one_day as loader
 import constants
 import math
 import sys
 import os
 import pickle
-import data_loader.dates as dts
+import data_loader.dates as dates_loader
 
-from statistics import mean, stdev
 from joblib import Parallel, delayed
 
 
-def transpose(l):
-    return list(map(list, zip(*l)))
+def log(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
 
 
-class Results:
-    def __init__(self, ins_r2, oos_r2, params, tvalues):
-        self.ins_r2 = ins_r2
-        self.oos_r2 = oos_r2
-        self.params = params
-        self.tvalues = tvalues
+def experiment_for_ticker(folder_path: str, temp_path: str, in_sample_size: int, os_size: int,
+                          rolling: int, model_class, ticker: str, start_date: date = None,
+                          end_date: date = None):
+    dates = dates_loader.get_dates_from_archive_files(folder_path=folder_path, tickers=[ticker], start_date=start_date,
+                                                      end_date=end_date)
+
+    start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
+    end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - os_size - in_sample_size + 1
+
+    res_list = []
+    for d in dates:
+        log(f"Running {d} - {ticker}...")
+        df = loader.get_single_date_df_for_ticker(folder_path=folder_path, temp_path=temp_path, d=d, ticker=ticker)
+        df = model_class.process_bucket_ofi_df(df)
+        if df is None or df.empty:
+            continue
+        for t in range(start_time, end_time + 1, rolling):
+            train_df = df[(df['start_time'] >= t) & (df['start_time'] < t + in_sample_size)]
+            test_df = df[
+                (df['start_time'] >= t + in_sample_size) & (df['start_time'] < t + in_sample_size + os_size)]
+            if train_df.size == 0 or test_df.size == 0:
+                continue
+            model = model_class()
+            results = model.run(train_df, test_df)
+            res_list.append(results)
+
+    avg_res = AveragedRegressionResults(res_list)
+    return avg_res
 
 
-def run_experiment(folder_path: str, temp_path: str, results_path: str, in_sample_size: int, model_name: str,
-                   os_size: int = None, rolling: int = None, tickers: list[str] = None, start_date: date = None,
-                   end_date: date = None, parallel_jobs: int = 1):
+def run_experiment_individual(folder_path: str, temp_path: str, results_path: str, in_sample_size: int,
+                              model_name: str, os_size: int = None, rolling: int = None, tickers: list[str] = None,
+                              start_date: date = None, end_date: date = None, parallel_jobs: int = 1):
     os_size = in_sample_size if os_size is None else os_size
     rolling = in_sample_size if rolling is None else rolling
 
-    def create_model():
-        if model_name == 'OFI':
-            return OFIModel(levels=10, return_type='current')
-        elif model_name == 'SplitOFI':
-            return SplitOFIModel(levels=10, return_type='current')
-        return None
-
-    ins_r2 = []
-    oos_r2 = []
+    model_class = model_factory(model_name)
 
     def run_experiment_for_ticker(ticker: str):
-        dates = dts.get_dates_from_archive_files(folder_path=folder_path, tickers=[ticker])
+        results = experiment_for_ticker(folder_path=folder_path, temp_path=temp_path, in_sample_size=in_sample_size,
+                                        os_size=os_size, rolling=rolling, model_class=model_class, ticker=ticker,
+                                        start_date=start_date, end_date=end_date)
 
-        def filter_date(d: date):
-            if start_date is not None and d < start_date:
-                return False
-            if end_date is not None and d > end_date:
-                return False
-            return True
+        results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
+        print(results_text, flush=True)
+        print(results_text, flush=True, file=sys.stderr)
 
-        dates = list(filter(filter_date, dates))
-
-        loc_ins_r2 = []
-        loc_oos_r2 = []
-        loc_params = []
-        loc_tvalues = []
-
-        for d in dates:
-            print(f"Running {d} - {ticker}...", file=sys.stderr)
-            df = loader.get_single_day_df(folder_path=folder_path, temp_path=temp_path, d=d,
-                                          tickers=[ticker])
-            start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
-            end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - os_size - in_sample_size + 1
-            for t in range(start_time, end_time + 1, rolling):
-                train_df = df[(df['start_time'] >= t) & (df['start_time'] < t + in_sample_size)]
-                test_df = df[
-                    (df['start_time'] >= t + in_sample_size) & (df['start_time'] < t + in_sample_size + os_size)]
-                if train_df.size == 0 or test_df.size == 0:
-                    continue
-                model = create_model()
-                model.fit(train_df)
-                model.score_test(test_df)
-                # models.append(model)
-                # Skip if r2 is nan
-                if math.isnan(model.get_adj_r2()):
-                    continue
-                loc_ins_r2.append(model.get_adj_r2())
-                loc_oos_r2.append(model.get_oos_r2())
-                loc_params.append(model.results.params)
-                loc_tvalues.append(model.results.tvalues)
-
-        loc_params = transpose(loc_params)
-        loc_tvalues = transpose(loc_tvalues)
-
-        avg_r2_ins = mean(loc_ins_r2)
-        avg_r2_oos = mean(loc_oos_r2)
-        print(f'{ticker} --- INS : {avg_r2_ins} ; {stdev(loc_ins_r2)} --- OOS: {avg_r2_oos} ; {stdev(loc_oos_r2)}',
-              flush=True)
-        print(f'{ticker} --- INS : {avg_r2_ins} ; {stdev(loc_ins_r2)} --- OOS: {avg_r2_oos} ; {stdev(loc_oos_r2)}',
-              file=sys.stderr, flush=True)
-        # print(f'R2 Out of Sample : {avg_r2_oos}')
-
-        results_file = os.path.join(results_path, ticker)
-        f = open(results_file, 'w')
-        f.write('\n'.join([str(loc_ins_r2), str(loc_oos_r2), str(loc_params), str(loc_tvalues)]))
-        f.write('\n\n')
-        for i in range(31):
-            f.write(
-                f'{mean(loc_params[i])} ; {stdev(loc_params[i])} ; {mean(loc_tvalues[i])} ; {stdev(loc_tvalues[i])}\n')
-        f.close()
-
-        res = Results(loc_ins_r2, loc_oos_r2, loc_params, loc_tvalues)
         with open(os.path.join(results_path, ticker + '.pickle'), 'wb') as f:
-            pickle.dump(res, f)
+            pickle.dump(results, f)
 
-        # nonlocal ins_r2
-        # nonlocal oos_r2
-        # ins_r2 += loc_ins_r2
-        # oos_r2 += loc_oos_r2
-
-    # for ticker in tickers:
-    #     run_experiment_for_ticker(ticker)
     Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in tickers)
-
-    # avg_r2_ins = mean(ins_r2)
-    # avg_r2_oos = mean(oos_r2)
-
-    # print(f'R2 In Sample : {avg_r2_ins}')
-    # print(f'R2 Out of Sample : {avg_r2_oos}')

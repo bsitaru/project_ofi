@@ -1,92 +1,96 @@
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from sklearn.metrics import r2_score
+from models.regression_results import RegressionResults
+from data_manipulation.bucket_ofi import normalize_ofi, compute_ofi_df_from_split
 
-from datetime import date
 from abc import ABC, abstractmethod
-from sklearn.linear_model import LinearRegression
 from constants import levels_list
-import math
-
-
-def read_csv(file: str, process_df) -> (np.ndarray, np.ndarray):
-    df = pd.read_csv(file)
-    return process_df(df)
 
 
 class LinRegModel(ABC):
     def __init__(self):
         self.model = None
         self.results = None
-        # self.train_data = self.process_df(train_df)
-        # self.test_data = self.process_df(test_df) if test_df is not None else None
-        self.tst_txt = ''
-        self.tst_r2 = None
-        self.lr_model = None
-        self.lr_r2 = None
+        self.os_r2 = None
         self.name = None
+        self.col_names = None
 
     def fit(self, train_df) -> ():
         x, y = self.process_df(train_df)
         self.model = sm.OLS(y, sm.add_constant(x))
         self.results = self.model.fit()
-        self.lr_model = LinearRegression().fit(x, y)
-        self.lr_r2 = self.lr_model.score(x, y)
 
     def score_test(self, test_df) -> ():
         if test_df is not None:
             x, y = self.process_df(test_df)
-            r2 = self.lr_model.score(x, y)
-            self.tst_r2 = r2
-            self.tst_txt = f'Out-of-sample r^2: {r2}'
+            ypred = self.results.predict(x)
+            r2 = r2_score(y, ypred)
+            self.os_r2 = r2
 
-    def summary(self) -> str:
-        sum_txt = self.results.summary().as_text()
-        return '\n'.join([sum_txt, self.tst_txt])
+    def get_results(self):
+        return RegressionResults.from_lin_reg_results(self.results, self.os_r2, ['intercept'] + self.col_names)
 
-    def df_summary(self, ticker: str, d: date) -> pd.DataFrame:
-        results: sm.regression.linear_model.RegressionResults = self.results
-        df = {'date': d, 'ticker': ticker, 'name': self.name, 'ins_r2': results.rsquared,
-              'adj_r2': results.rsquared_adj, 'oos_r2': self.tst_r2}
-        df = pd.DataFrame(df, index=[0])
-        return df
-
-    def get_adj_r2(self):
-        return self.results.rsquared_adj
-
-    def get_oos_r2(self):
-        return self.tst_r2
+    def run(self, train_df, test_df) -> RegressionResults:
+        self.fit(train_df)
+        self.score_test(test_df)
+        return self.get_results()
 
     @abstractmethod
     def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
         pass
 
 
-class SplitOFIModel(LinRegModel):
-    def __init__(self, levels: int, return_type: str):
-        self.levels = levels
-        self.return_col = 'return_now' if return_type == 'current' else 'return_future'
+class BaseOFIModel(LinRegModel):
+    def __init__(self, levels: int):
         super().__init__()
-        self.name = f"SplitOFI_{levels}_{return_type}"
+        self.levels = levels
 
     def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
-        levels = self.levels
-        cols = levels_list('ofi_add', levels) + levels_list('ofi_cancel', levels) + levels_list('ofi_trade', levels)
-        x = df[cols].to_numpy()
-        y = df[[self.return_col]].to_numpy()
+        x = df[self.col_names].to_numpy()
+        x = sm.add_constant(x)
+        y = df[['return']].to_numpy()
         return x, y
 
+    @staticmethod
+    def process_bucket_ofi_df(df: pd.DataFrame) -> pd.DataFrame:
+        return normalize_ofi(df)
 
-class OFIModel(LinRegModel):
-    def __init__(self, levels: int, return_type: str):
-        self.levels = levels
-        self.return_col = 'return_now' if return_type == 'current' else 'return_future'
-        super().__init__()
-        self.name = f"OFI_{levels}_{return_type}"
 
-    def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
-        levels = self.levels
-        cols = levels_list('ofi', levels)
-        x = df[cols].to_numpy()
-        y = df[[self.return_col]].to_numpy()
-        return x, y
+class SplitOFIModel(BaseOFIModel):
+    def __init__(self, levels: int):
+        super().__init__(levels)
+        self.col_names = levels_list('ofi_add', levels) + levels_list('ofi_cancel', levels) + levels_list('ofi_trade',
+                                                                                                          levels)
+        self.name = f"SplitOFI_{levels}"
+
+
+class OFIModel(BaseOFIModel):
+    def __init__(self, levels: int):
+        super().__init__(levels)
+        self.col_names = levels_list('ofi', levels)
+        self.name = f"OFI_{levels}"
+
+    @staticmethod
+    def process_bucket_ofi_df(df: pd.DataFrame) -> pd.DataFrame:
+        df = super().process_bucket_ofi_df(df)
+        return compute_ofi_df_from_split(df)
+
+
+def model_factory(model_name: str):
+    levels = 10
+    cls = OFIModel
+
+    if model_name.startswith('OFI'):
+        levels = int(model_name[4:])
+        cls = OFIModel
+    elif model_name.startswith('SplitOFI'):
+        levels = int(model_name[9:])
+        cls = SplitOFIModel
+
+    class ModelClass(cls):
+        def __init__(self):
+            super().__init__(levels=levels)
+
+    return ModelClass

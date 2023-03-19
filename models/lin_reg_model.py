@@ -74,7 +74,7 @@ class OFIModel(BaseOFIModel):
 
     @staticmethod
     def process_bucket_ofi_df(df: pd.DataFrame) -> pd.DataFrame:
-        df = super().process_bucket_ofi_df(df)
+        df = BaseOFIModel.process_bucket_ofi_df(df)
         return compute_ofi_df_from_split(df)
 
 

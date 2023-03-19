@@ -77,8 +77,8 @@ def normalize_ofi(df: pd.DataFrame) -> pd.DataFrame:
 def compute_ofi_df_from_split(df: pd.DataFrame) -> pd.DataFrame:
     if not is_valid_df(df):
         return empty_df()
-    for i in range(constants.LEVELS):
-        cols = [f"{s}_{i}" for s in SPLIT_OFI_COLS]
+    for i in range(1, constants.LEVELS + 1):
+        cols = [f"{s}_{i}" for s in SPLIT_OFI_NAMES]
         ofi_col = f"ofi_{i}"
         df[ofi_col] = df[cols[0]]
         for c in cols[1:]:

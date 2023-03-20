@@ -3,7 +3,7 @@ import pandas as pd
 import statsmodels.api as sm
 from sklearn.metrics import r2_score
 from models.regression_results import RegressionResults
-from data_manipulation.bucket_ofi import compute_normalized_ofi, compute_ofi_df_from_split
+from data_manipulation.bucket_ofi import compute_normalized_ofi, compute_ofi_df_from_split, compute_otofi_df_from_split
 
 from abc import ABC, abstractmethod
 from constants import levels_list
@@ -78,6 +78,18 @@ class OFIModel(BaseOFIModel):
         return compute_ofi_df_from_split(df)
 
 
+class OTOFIModel(BaseOFIModel):
+    def __init__(self, levels: int):
+        super().__init__(levels)
+        self.col_names = levels_list('ofi_order', levels) + levels_list('ofi_trade', levels)
+        self.name = f"OTOFI_{levels}"
+
+    @staticmethod
+    def process_bucket_ofi_df(df: pd.DataFrame) -> pd.DataFrame:
+        df = BaseOFIModel.process_bucket_ofi_df(df)
+        return compute_otofi_df_from_split(df)
+
+
 def model_factory(model_name: str):
     levels = 10
     cls = OFIModel
@@ -88,6 +100,9 @@ def model_factory(model_name: str):
     elif model_name.startswith('SplitOFI'):
         levels = int(model_name[9:])
         cls = SplitOFIModel
+    elif model_name.startswith('OTOFI'):
+        levels = int(model_name[6:])
+        cls = OTOFIModel
 
     class ModelClass(cls):
         def __init__(self):

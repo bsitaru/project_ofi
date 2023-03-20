@@ -94,6 +94,14 @@ def compute_ofi_df_from_split(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def compute_otofi_df_from_split(df: pd.DataFrame) -> pd.DataFrame:
+    if not is_valid_df(df):
+        return empty_df()
+    for i in range(1, constants.LEVELS + 1):
+        df[f'ofi_order_{i}'] = df[f'ofi_add_{i}'] + df[f'ofi_cancel_{i}']
+    return df
+
+
 def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps) -> pd.DataFrame:
     # Remove data outside range
     df.drop(df[(df['time'] < props.start_time) | (df['time'] >= props.end_time)].index, inplace=True)

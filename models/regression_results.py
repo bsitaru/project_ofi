@@ -25,7 +25,10 @@ class AveragedRegressionResults:
             return
 
         self.stats_names = l[0].stats_names
-        self.values = np.stack([r.values for r in l], axis=-1)
+        if type(l[0]) == RegressionResults:
+            self.values = np.stack([r.values for r in l], axis=-1)
+        elif type(l[0]) == AveragedRegressionResults:
+            self.values = np.concatenate([r.values for r in l], axis=1)
 
         self.average = np.average(self.values, axis=1)
         self.std = np.std(self.values, axis=1)

@@ -1,19 +1,19 @@
 from datetime import date
 from models.lin_reg_model import model_factory
 from models.regression_results import AveragedRegressionResults, RegressionResults
+from data_manipulation.bucket_ofi import is_valid_trading_sample
 import data_loader.one_day as loader
+import data_loader.dates as dates_loader
 import constants
-import math
 import sys
 import os
 import pickle
-import data_loader.dates as dates_loader
 
 from joblib import Parallel, delayed
 
 
 def log(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+    print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
 def experiment_for_ticker(folder_path: str, temp_path: str, in_sample_size: int, os_size: int,
@@ -36,16 +36,17 @@ def experiment_for_ticker(folder_path: str, temp_path: str, in_sample_size: int,
             train_df = df[(df['start_time'] >= t) & (df['start_time'] < t + in_sample_size)]
             test_df = df[
                 (df['start_time'] >= t + in_sample_size) & (df['start_time'] < t + in_sample_size + os_size)]
-            if train_df.size == 0 or test_df.size == 0 or train_df['event_count'].sum() == 0 or \
-                    test_df['event_count'].sum() == 0:
+            if not is_valid_trading_sample(train_df) or not is_valid_trading_sample(test_df):
                 continue
 
             try:
                 model = model_class()
                 results = model.run(train_df, test_df)
                 res_list.append(results)
+                if results.values[1] < 0:
+                    log(f'Negative OS: {results.values[1]} --- ticker {ticker} --- day {d} --- time {t}')
             except:
-                print(f'Error --- ticker {ticker} --- day {d} --- time {t}', file=sys.stderr, flush=True)
+                log(f'Error --- ticker {ticker} --- day {d} --- time {t}')
 
     avg_res = AveragedRegressionResults(res_list)
     return avg_res

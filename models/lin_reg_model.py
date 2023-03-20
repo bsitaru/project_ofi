@@ -3,7 +3,7 @@ import pandas as pd
 import statsmodels.api as sm
 from sklearn.metrics import r2_score
 from models.regression_results import RegressionResults
-from data_manipulation.bucket_ofi import normalize_ofi, compute_ofi_df_from_split
+from data_manipulation.bucket_ofi import compute_normalized_ofi, compute_ofi_df_from_split
 
 from abc import ABC, abstractmethod
 from constants import levels_list
@@ -55,7 +55,7 @@ class BaseOFIModel(LinRegModel):
 
     @staticmethod
     def process_bucket_ofi_df(df: pd.DataFrame) -> pd.DataFrame:
-        return normalize_ofi(df)
+        return compute_normalized_ofi(df)
 
 
 class SplitOFIModel(BaseOFIModel):

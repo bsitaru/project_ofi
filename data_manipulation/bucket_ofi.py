@@ -63,7 +63,15 @@ def is_valid_df(df: pd.DataFrame) -> bool:
     return True
 
 
-def normalize_ofi(df: pd.DataFrame) -> pd.DataFrame:
+def is_valid_trading_sample(df: pd.DataFrame) -> bool:
+    if df.empty:
+        return False
+    if (df['event_count'] == 0).values.sum() > 2:
+        return False
+    return True
+
+
+def compute_normalized_ofi(df: pd.DataFrame) -> pd.DataFrame:
     if not is_valid_df(df):
         return empty_df()
     average_vol_size = df[VOLUME_COLS[0]]

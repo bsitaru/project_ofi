@@ -25,7 +25,7 @@ class LinRegModel(ABC):
     def score_test(self, test_df) -> ():
         if test_df is not None:
             x, y = self.process_df(test_df)
-            ypred = self.results.predict(x)
+            ypred = self.results.predict(sm.add_constant(x))
             r2 = r2_score(y, ypred)
             self.os_r2 = r2
 
@@ -49,7 +49,6 @@ class BaseOFIModel(LinRegModel):
 
     def process_df(self, df: pd.DataFrame) -> (np.ndarray, np.ndarray):
         x = df[self.col_names].to_numpy()
-        x = sm.add_constant(x)
         y = df[['return']].to_numpy()
         return x, y
 

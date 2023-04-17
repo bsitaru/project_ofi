@@ -19,6 +19,7 @@ from data_manipulation.tick_ofi import compute_tick_ofi_df
 
 VERBOSE = True
 
+
 def log(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
@@ -44,6 +45,24 @@ class ExtractedArchiveProcessor(ABC):
         pass
 
 
+class SplitOFIToExtractedProcessor(ExtractedArchiveProcessor):
+    def __init__(self, file_filter: FileFilter, parallel_jobs: int = 1, verbose: bool = VERBOSE):
+        super().__init__(parallel_jobs, verbose)
+        self.file_filter = file_filter
+
+    def process_file(self, file_name: str, folder_path: str, out_path: str):
+        [ticker, d, _, _] = file_name[:-4].split('_')
+        file_path = os.path.join(folder_path, file_name)
+        dir_path = os.path.join(out_path, ticker)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        dest_path = os.path.join(dir_path, f"{d}.csv")
+        shutil.copy(file_path, dest_path)
+
+    def get_new_archive_name(self, old_archive_name: str):
+        pass
+
+
 class L3ToSplitOFIFileProcessor(ExtractedArchiveProcessor):
     def __init__(self, bucket_ofi_props: BucketOFIProps, file_filter: FileFilter, parallel_jobs: int = 1,
                  verbose: bool = VERBOSE):
@@ -62,7 +81,7 @@ class L3ToSplitOFIFileProcessor(ExtractedArchiveProcessor):
             orderbook_file_path = os.path.join(folder_path, orderbook_file_name)
             df = compute_bucket_ofi_from_files(message_file=message_file_path, orderbook_file=orderbook_file_path,
                                                props=self.bucket_ofi_props)
-            if df.empty:    # Do not save file if empty
+            if df.empty:  # Do not save file if empty
                 return
             new_file_name = get_new_bucket_ofi_file_name(ticker=ticker, d=d, props=self.bucket_ofi_props)
             new_file_path = os.path.join(out_path, new_file_name)

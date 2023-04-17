@@ -48,3 +48,9 @@ def get_single_day_df(folder_path: str, temp_path: str, d: date, tickers: list[s
         os.remove(temp_file)
     shutil.rmtree(temp_path)
     return df
+
+
+def get_extracted_single_day_df_for_ticker(folder_path: str, ticker: str, d: date):
+    file_path = os.path.join(folder_path, ticker, f"{d}.csv")
+    df = get_bucket_ofi_df(file_path)
+    return df

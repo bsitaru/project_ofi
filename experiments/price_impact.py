@@ -1,13 +1,18 @@
 from datetime import date
 from models.lin_reg_model import model_factory
 from models.regression_results import AveragedRegressionResults, RegressionResults
-from data_manipulation.bucket_ofi import is_valid_trading_sample
+
 import data_loader.one_day as loader
 import data_loader.dates as dates_loader
+import data_loader.data_selector as data_selector
+import data_loader.data_processor as data_processor
 import constants
 import sys
 import os
 import pickle
+import logging
+import yaml
+from models.linear_regression import run_linear_regression
 
 from joblib import Parallel, delayed
 
@@ -16,61 +21,102 @@ def log(*args, **kwargs):
     print(*args, file=sys.stderr, flush=True, **kwargs)
 
 
-def experiment_for_ticker(folder_path: str, temp_path: str, in_sample_size: int, os_size: int,
-                          rolling: int, model_class, ticker: str, start_date: date = None,
-                          end_date: date = None):
-    dates = dates_loader.get_dates_from_archive_files(folder_path=folder_path, tickers=[ticker], start_date=start_date,
-                                                      end_date=end_date)
+def experiment_for_ticker(args, ticker):
+    in_sample_size = args.experiment.in_sample_size
+    os_size = args.experiment.os_size
+    rolling = args.experiment.rolling
+
+    dates = dates_loader.get_dates_from_folder(folder_path=args.folder_path, tickers=[ticker],
+                                               start_date=args.start_date, end_date=args.end_date)
 
     start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
     end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - os_size - in_sample_size + 1
 
+    x_selector = data_selector.factory(args.selector.type)(volume_normalize=args.selector.volume_normalize,
+                                                           levels=args.selector.levels)
+    y_selector = data_selector.factory('Return')()
+
     res_list = []
     for d in dates:
         log(f"Running {d} - {ticker}...")
-        df = loader.get_single_date_df_for_ticker(folder_path=folder_path, temp_path=temp_path, d=d, ticker=ticker)
-        df = model_class.process_bucket_ofi_df(df)
-        if df is None or df.empty:
+        df = loader.get_extracted_single_day_df_for_ticker(folder_path=args.folder_path, ticker=ticker, d=d)
+        df_x = x_selector.process(df)
+        df_y = y_selector.process(df)
+        if df_x is None or df_x.empty or df_y is None or df_y.empty:
             continue
+
         for t in range(start_time, end_time + 1, rolling):
-            train_df = df[(df['start_time'] >= t) & (df['start_time'] < t + in_sample_size)]
-            test_df = df[
-                (df['start_time'] >= t + in_sample_size) & (df['start_time'] < t + in_sample_size + os_size)]
-            if not is_valid_trading_sample(train_df) or not is_valid_trading_sample(test_df):
+            train_x = x_selector.select_interval_df(df_x, t, t + in_sample_size)
+            train_y = y_selector.select_interval_df(df_y, t, t + in_sample_size)
+
+            test_x = x_selector.select_interval_df(df_x, t + in_sample_size, t + in_sample_size + os_size)
+            test_y = y_selector.select_interval_df(df_y, t + in_sample_size, t + in_sample_size + os_size)
+
+            if train_x.size == 0 or test_x.size == 0 or train_y.size == 0 or test_y.size == 0:
                 continue
 
+            processor = data_processor.factory(args.processor)
+            train_x = processor.fit(train_x)
+            test_x = processor.process(test_x)
+
             try:
-                model = model_class()
-                results = model.run(train_df, test_df)
+                results = run_linear_regression(regression_type=args.regression.type, train_dataset=(train_x, train_y),
+                                                test_dataset=(test_x, test_y))
                 res_list.append(results)
                 if results.values[1] < 0:
                     log(f'Negative OS: {results.values[1]} --- ticker {ticker} --- day {d} --- time {t}')
-            except:
-                log(f'Error --- ticker {ticker} --- day {d} --- time {t}')
+            except AttributeError as e:
+                log(f'Error --- ticker {ticker} --- day {d} --- time {t} --- {e}')
 
     avg_res = AveragedRegressionResults(res_list)
     return avg_res
 
 
-def run_experiment_individual(folder_path: str, temp_path: str, results_path: str, in_sample_size: int,
-                              model_name: str, os_size: int = None, rolling: int = None, tickers: list[str] = None,
-                              start_date: date = None, end_date: date = None, parallel_jobs: int = 1):
-    os_size = in_sample_size if os_size is None else os_size
-    rolling = in_sample_size if rolling is None else rolling
+def naming(args):
+    r = [args.experiment.name,
+         "issize", str(args.experiment.in_sample_size),
+         "ossize", str(args.experiment.os_size),
+         "rolling", str(args.experiment.rolling),
+         "seltype", args.selector.type,
+         "nrmvol", str(args.selector.volume_normalize),
+         "lvl", str(args.selector.levels),
+         "regtype", str(args.regression.type)]
+    return "_".join(r)
 
-    model_class = model_factory(model_name)
+
+def get_logger(folder_path: str) -> logging.Logger:
+    logger = logging.getLogger('myapp')
+    hdlr = logging.FileHandler(os.path.join(folder_path, 'logs.log'))
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.INFO)
+    return logger
+
+
+def run_experiment_individual(args):
+    print(f'Experiment: {args.experiment.name}')
+    results_name = naming(args)
+    results_path = os.path.join(args.results_path, results_name)
+    if not os.path.exists(results_path):
+        os.mkdir(results_path)
+
+    logger = get_logger(results_path)
+    logger.info(f'Experiment: {args.experiment.name}')
+
+    with open(os.path.join(results_path, 'config.yaml'), 'w') as outfile:
+        yaml.dump(args.to_dict(), outfile, default_flow_style=False)
 
     def run_experiment_for_ticker(ticker: str):
-        results = experiment_for_ticker(folder_path=folder_path, temp_path=temp_path, in_sample_size=in_sample_size,
-                                        os_size=os_size, rolling=rolling, model_class=model_class, ticker=ticker,
-                                        start_date=start_date, end_date=end_date)
+        results = experiment_for_ticker(ticker=ticker, args=args)
 
         if results.values is not None:
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
             print(results_text, flush=True)
             print(results_text, flush=True, file=sys.stderr)
+            logger.info(results_text)
 
-            with open(os.path.join(results_path, ticker + '.pickle'), 'wb') as f:
+            with open(os.path.join(results_path, f'{ticker}.pickle'), 'wb') as f:
                 pickle.dump(results, f)
 
-    Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in tickers)
+    Parallel(n_jobs=args.parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in args.tickers)

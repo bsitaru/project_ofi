@@ -56,3 +56,21 @@ def get_dates_from_folder(folder_path: str, tickers: list[str] = None, start_dat
 
     dates = list(filter(fn_filter_dates(start_date, end_date), list(dates)))
     return sorted(dates)
+
+
+def get_dates_in_majority_from_folder(folder_path: str, tickers: list[str], start_date: date = None,
+                                      end_date: date = None):
+    dates = {}
+    for t in tickers:
+        t_dates = get_dates_from_folder(folder_path=folder_path, tickers=[t], start_date=start_date, end_date=end_date)
+        for d in t_dates:
+            if d not in dates:
+                dates[d] = 0
+            dates[d] += 1
+
+    majority = len(tickers) // 2 + 1
+    majority_dates = []
+    for (d, num) in dates.items():
+        if num >= majority:
+            majority_dates.append(d)
+    return sorted(majority_dates)

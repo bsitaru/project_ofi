@@ -21,9 +21,9 @@ def load_yaml(config_file: str):
             print(exc)
 
     if cfg['start_date'] is not None:
-        cfg['start_date'] = process_date(cfg['fixed']['start_date'])
+        cfg['start_date'] = cfg['start_date']
     if cfg['end_date'] is not None:
-        cfg['end_date'] = process_date(cfg['fixed']['end_date'])
+        cfg['end_date'] = cfg['end_date']
     if cfg['tickers'] is None:
         cfg['tickers'] = constants.TICKERS[:100]
     return cfg
@@ -47,6 +47,8 @@ def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None):
 
     if args.experiment.name == 'individual_price_impact':
         pi_intraday.run_experiment_individual(args)
+    elif args.experiment.name == 'universal_price_impact':
+        pi_intraday.run_experiment_universal(args)
     else:
         raise ValueError(f'invalid experiment name {args.experiment.name}')
 

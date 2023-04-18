@@ -78,7 +78,7 @@ def compute_normalized_ofi(df: pd.DataFrame) -> pd.DataFrame:
     for c in VOLUME_COLS[1:]:
         average_vol_size += df[c]
     for c in SPLIT_OFI_COLS:
-        df[c] = np.divide(df[c].astype(float), average_vol_size, out=np.zeros_like(df[c], dtype=float), where=average_vol_size != 0)
+        df[c] = np.divide(df[c].astype(float), average_vol_size, out=np.zeros_like(df[c].astype(float), dtype=float), where=average_vol_size != 0)
     return df
 
 

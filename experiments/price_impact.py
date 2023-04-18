@@ -99,7 +99,7 @@ def experiment_for_tickers(args, tickers: list[str]):
                 res_list.append(results)
                 if results.values[1] < 0:
                     log(f'Negative OS: {results.values[1]} --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left}')
-            except AttributeError as e:
+            except Exception as e:
                 log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}')
 
     avg_res = AveragedRegressionResults(res_list)

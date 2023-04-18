@@ -16,13 +16,13 @@ fixed:
 
   selector:
     type: 'SplitOFI'
-    volume_normalize: False
+    volume_normalize: True
     levels: 10
 
   regression:
     type: 'linear'
 
   processor:
-    normalize: True
+    normalize: False
 
 

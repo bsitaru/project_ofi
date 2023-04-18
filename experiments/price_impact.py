@@ -38,8 +38,8 @@ def experiment_for_tickers(args, tickers: list[str]):
     os_size = args.experiment.os_size
     rolling = args.experiment.rolling
 
-    dates = dates_loader.get_dates_from_folder(folder_path=args.folder_path, tickers=tickers,
-                                               start_date=args.start_date, end_date=args.end_date)
+    dates = dates_loader.get_dates_in_majority_from_folder(folder_path=args.folder_path, tickers=tickers,
+                                                           start_date=args.start_date, end_date=args.end_date)
 
     start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
     end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - os_size - in_sample_size + 1

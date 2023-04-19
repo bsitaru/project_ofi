@@ -114,7 +114,7 @@ def experiment_for_tickers(args, tickers: list[str], logger=None):
                 log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}',
                     logger=logger)
 
-    avg_res = AveragedRegressionResults(res_list, column_names=RegressionResults.column_names(x_selector.column_names))
+    avg_res = AveragedRegressionResults(res_list, column_names=RegressionResults.column_names(['intercept'] + x_selector.column_names))
     if logger is not None:
         avg_res.log(logger)
     return avg_res

@@ -10,7 +10,7 @@ fixed:
     os_size: 1800
     rolling: 1800
 
-  tickers: [AAPL, FB]
+  tickers: null
   start_date: null
   end_date: null
 
@@ -23,6 +23,6 @@ fixed:
     type: 'linear'
 
   processor:
-    normalize: False
+    normalize: True
 
 

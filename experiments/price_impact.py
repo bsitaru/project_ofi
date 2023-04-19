@@ -1,10 +1,4 @@
-from datetime import date
-
 import numpy as np
-
-from models.lin_reg_model import model_factory
-from models.regression_results import AveragedRegressionResults, RegressionResults
-
 import data_loader.one_day as loader
 import data_loader.dates as dates_loader
 import data_loader.data_selector as data_selector
@@ -16,12 +10,25 @@ import pickle
 import logging
 import yaml
 from models.linear_regression import run_linear_regression
+from models.regression_results import AveragedRegressionResults, RegressionResults
 
 from joblib import Parallel, delayed
 
 
-def log(*args, **kwargs):
-    print(*args, file=sys.stderr, flush=True, **kwargs)
+def get_logger(folder_path: str, logger_name: str = 'myapp') -> logging.Logger:
+    logger = logging.getLogger(logger_name)
+    hdlr = logging.FileHandler(os.path.join(folder_path, f"{logger_name}.log"))
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.INFO)
+    return logger
+
+
+def log(text: str, logger=None):
+    print(text, file=sys.stderr, flush=True)
+    if logger is not None:
+        logger.info(text)
 
 
 def log_tickers(tickers):
@@ -33,7 +40,10 @@ def log_tickers(tickers):
         return ', '.join(tickers[:5]) + ' ...'
 
 
-def experiment_for_tickers(args, tickers: list[str]):
+def experiment_for_tickers(args, tickers: list[str], logger=None):
+    if logger is not None:
+        logger.info(f"Tickers: {tickers}")
+
     in_sample_size = args.experiment.in_sample_size
     os_size = args.experiment.os_size
     rolling = args.experiment.rolling
@@ -98,34 +108,31 @@ def experiment_for_tickers(args, tickers: list[str]):
                                                 test_dataset=(test_x, test_y))
                 res_list.append(results)
                 if results.values[1] < 0:
-                    log(f'Negative OS: {results.values[1]} --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left}')
+                    log(f'Negative OS: {results.values[1]} --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left}',
+                        logger=logger)
             except Exception as e:
-                log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}')
+                log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}',
+                    logger=logger)
 
-    avg_res = AveragedRegressionResults(res_list)
+    avg_res = AveragedRegressionResults(res_list, column_names=RegressionResults.column_names(x_selector.column_names))
+    if logger is not None:
+        avg_res.log(logger)
     return avg_res
 
 
 def naming(args):
-    r = [args.experiment.name,
-         "issize", str(args.experiment.in_sample_size),
-         "ossize", str(args.experiment.os_size),
-         "rolling", str(args.experiment.rolling),
-         "seltype", args.selector.type,
-         "nrmvol", str(args.selector.volume_normalize),
-         "lvl", str(args.selector.levels),
-         "regtype", str(args.regression.type)]
+    r = [args.experiment.name]
+    r += ["issize", str(args.experiment.in_sample_size)]
+    r += ["ossize", str(args.experiment.os_size)]
+    r += ["rolling", str(args.experiment.rolling)]
+    r += ["seltype", args.selector.type]
+    r += ["lvl", str(args.selector.levels)]
+    if args.selector.volume_normalize:
+        r += ["volnrm"]
+    if args.processor.normalize:
+        r += ["indvnrm"]
+    r += ["regtype", str(args.regression.type)]
     return "_".join(r)
-
-
-def get_logger(folder_path: str) -> logging.Logger:
-    logger = logging.getLogger('myapp')
-    hdlr = logging.FileHandler(os.path.join(folder_path, 'logs.log'))
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    hdlr.setFormatter(formatter)
-    logger.addHandler(hdlr)
-    logger.setLevel(logging.INFO)
-    return logger
 
 
 def experiment_init(args):
@@ -135,7 +142,7 @@ def experiment_init(args):
     if not os.path.exists(results_path):
         os.mkdir(results_path)
 
-    logger = get_logger(results_path)
+    logger = get_logger(results_path, 'logs')
     logger.info(f'Experiment: {args.experiment.name}')
 
     with open(os.path.join(results_path, 'config.yaml'), 'w') as outfile:
@@ -148,18 +155,20 @@ def run_experiment_individual(args):
     logger, results_path = experiment_init(args)
 
     def run_experiment_for_ticker(ticker: str):
-        results = experiment_for_tickers(tickers=[ticker], args=args)
+        logger_now = get_logger(results_path, ticker)
+
+        results = experiment_for_tickers(tickers=[ticker], args=args, logger=logger_now)
 
         if results.values is not None:
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
-            print(results_text, flush=True)
-            print(results_text, flush=True, file=sys.stderr)
-            logger.info(results_text)
+            log(results_text, logger=logger)
 
-            with open(os.path.join(results_path, f'{ticker}.pickle'), 'wb') as f:
-                pickle.dump(results, f)
+            results.save_pickle(os.path.join(results_path, f'{ticker}.pickle'))
 
     Parallel(n_jobs=args.parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in args.tickers)
+
+    results = AveragedRegressionResults.from_directory(results_path)
+    results.log(logger)
 
 
 def run_experiment_universal(args):
@@ -168,10 +177,7 @@ def run_experiment_universal(args):
     with open(os.path.join(results_path, 'config.yaml'), 'w') as outfile:
         yaml.dump(args.to_dict(), outfile, default_flow_style=False)
 
-    results = experiment_for_tickers(args, tickers=args.tickers)
+    results = experiment_for_tickers(args, tickers=args.tickers, logger=logger)
     results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
-    print(results_text, flush=True)
-    print(results_text, flush=True, file=sys.stderr)
-    logger.info(results_text)
-    with open(os.path.join(results_path, 'universal.pickle'), 'wb') as f:
-        pickle.dump(results, f)
+    log(results_text, logger=logger)
+    results.save_pickle(os.path.join(results_path, 'universal.pickle'))

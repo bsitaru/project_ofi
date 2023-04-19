@@ -7,6 +7,7 @@ from statsmodels.tools.tools import pinv_extended
 import statsmodels.api as sm
 import sklearn
 import statsmodels
+from sklearn.linear_model import LassoCV
 
 
 def regression_analysis(X, y, model, lib):
@@ -56,14 +57,18 @@ def regression_analysis(X, y, model, lib):
 def run_linear_regression(regression_type: str, train_dataset: (np.ndarray, np.ndarray),
                           test_dataset: (np.ndarray, np.ndarray)) -> RegressionResults:
     x_train, y_train = train_dataset
-    x_train = sm.add_constant(x_train)
     if regression_type == "linear":
+        x_train = sm.add_constant(x_train)
         model = sm.OLS(y_train, x_train).fit()
+        results = regression_analysis(x_train, y_train, model, lib='statsmodels')
     elif regression_type == 'lasso':
-        model = sm.OLS(y_train, x_train).fit_regularized(method='elastic_net', L1_wt=1.)
+        # model = sm.OLS(y_train, x_train).fit_regularized(method='elastic_net', L1_wt=1.)
+        model = LassoCV(fit_intercept=True, max_iter=100000)
+        model.fit(x_train, y_train)
+        results = regression_analysis(x_train, y_train, model, lib='sklearn')
+        # print(f"is --- {results.rsquared_adj} --- alpha --- {model.alpha_}", )
     else:
         raise ValueError(f'invalid regression type {regression_type}')
-    results = regression_analysis(x_train, y_train, model, lib='statsmodels')
 
     x_test, y_test = test_dataset
     x_test = sm.add_constant(x_test)

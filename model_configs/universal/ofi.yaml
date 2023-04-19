@@ -10,12 +10,12 @@ fixed:
     os_size: 1800
     rolling: 1800
 
-  tickers: [AAPL, FB]
+  tickers: null
   start_date: null
   end_date: null
 
   selector:
-    type: 'SplitOFI'
+    type: 'OFI'
     volume_normalize: True
     levels: 10
 

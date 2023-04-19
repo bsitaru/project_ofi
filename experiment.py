@@ -25,17 +25,21 @@ def load_yaml(config_file: str):
     if cfg['end_date'] is not None:
         cfg['end_date'] = cfg['end_date']
     if cfg['tickers'] is None:
-        cfg['tickers'] = constants.TICKERS[:100]
+        cfg['tickers'] = constants.DEFAULT_TICKERS
     return cfg
 
 
 @main.command()
-def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None):
+def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None, use_all: bool = None):
     args = load_yaml(config_file)
     if levels is not None:
         args['selector']['levels'] = levels
     if parallel_jobs is not None:
         args['parallel_jobs'] = parallel_jobs
+    if use_all:
+        args['start_date'] = None
+        args['end_date'] = None
+        args['tickers'] = constants.DEFAULT_TICKERS
     args = ConfigDict(args)
 
     # os_size = in_sample_size if os_size is None else os_size

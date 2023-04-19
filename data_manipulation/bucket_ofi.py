@@ -71,11 +71,11 @@ def is_valid_trading_sample(df: pd.DataFrame) -> bool:
     return True
 
 
-def compute_normalized_ofi(df: pd.DataFrame) -> pd.DataFrame:
+def compute_normalized_ofi(df: pd.DataFrame, levels: int = constants.LEVELS) -> pd.DataFrame:
     if not is_valid_df(df):
         return empty_df()
     average_vol_size = df[VOLUME_COLS[0]]
-    for c in VOLUME_COLS[1:]:
+    for c in VOLUME_COLS[1:levels]:
         average_vol_size += df[c]
     average_vol_size = average_vol_size.astype(float)
     for c in SPLIT_OFI_COLS:

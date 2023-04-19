@@ -24,3 +24,5 @@ SPLIT_OFI_NAMES = ['ofi_add', 'ofi_cancel', 'ofi_trade']
 OFI_COLS = sum([levels_list(i) for i in OFI_NAMES], [])
 SPLIT_OFI_COLS = sum([levels_list(i) for i in SPLIT_OFI_NAMES], [])
 VOLUME_COLS = levels_list('volume')
+
+DEFAULT_TICKERS = TICKERS[:100]

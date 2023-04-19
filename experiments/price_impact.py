@@ -113,8 +113,12 @@ def experiment_for_tickers(args, tickers: list[str], logger=None):
             except Exception as e:
                 log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}',
                     logger=logger)
+    columns = x_selector.column_names
+    if 'pca' in args.processor:
+        columns = [f"pca_{x}" for x in range(1, args.processor.pca + 1)]
+    columns = ['intercept'] + columns
 
-    avg_res = AveragedRegressionResults(res_list, column_names=RegressionResults.column_names(['intercept'] + x_selector.column_names))
+    avg_res = AveragedRegressionResults(res_list, column_names=RegressionResults.column_names(columns))
     if logger is not None:
         avg_res.log(logger)
     return avg_res
@@ -131,6 +135,8 @@ def naming(args):
         r += ["volnrm"]
     if args.processor.normalize:
         r += ["indvnrm"]
+    if 'pca' in args.processor:
+        r += ["pca", str(args.processor.pca)]
     r += ["regtype", str(args.regression.type)]
     return "_".join(r)
 

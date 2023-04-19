@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import PCA
 
 
 class DataProcessor:
@@ -31,23 +32,34 @@ class Decorator(DataProcessor):
         return self._data_processor.fit(x)
 
 
-class Normalize(Decorator):
-    def __init__(self, data_processor: DataProcessor):
+class SkDecorator(Decorator):
+    def __init__(self, data_processor: DataProcessor, sk_component):
         super().__init__(data_processor)
-        self.normalizer = MinMaxScaler()
+        self.sk_component = sk_component
 
     def fit(self, x: np.ndarray):
         x = self.data_processor.fit(x)
-        self.normalizer.fit(x)
-        return self.normalizer.transform(x)
+        return self.sk_component.fit_transform(x)
 
     def process(self, x: np.ndarray):
         x = self.data_processor.process(x)
-        return self.normalizer.transform(x)
+        return self.sk_component.transform(x)
+
+
+class Normalize(SkDecorator):
+    def __init__(self, data_processor: DataProcessor):
+        super().__init__(data_processor, MinMaxScaler())
+
+
+class PCAProcessor(SkDecorator):
+    def __init__(self, data_processor: DataProcessor, n_components: int = None):
+        super().__init__(data_processor, PCA(n_components=n_components))
 
 
 def factory(args):
     processor = DataProcessor()
     if args.normalize:
         processor = Normalize(processor)
+    if 'pca' in args:
+        processor = PCAProcessor(processor, n_components=args.pca)
     return processor

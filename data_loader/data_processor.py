@@ -55,11 +55,29 @@ class PCAProcessor(SkDecorator):
     def __init__(self, data_processor: DataProcessor, n_components: int = None):
         super().__init__(data_processor, PCA(n_components=n_components))
 
+    def explained_variance_ratio(self):
+        ans = self.sk_component.explained_variance_ratio_
+        return np.cumsum(ans)
+
 
 def factory(args):
     processor = DataProcessor()
     if args.normalize:
         processor = Normalize(processor)
+    if 'pca' in args:
+        processor = PCAProcessor(processor, n_components=args.pca)
+    return processor
+
+
+def factory_individual(args):
+    processor = DataProcessor()
+    if args.normalize:
+        processor = Normalize(processor)
+    return processor
+
+
+def factory_group(args):
+    processor = DataProcessor()
     if 'pca' in args:
         processor = PCAProcessor(processor, n_components=args.pca)
     return processor

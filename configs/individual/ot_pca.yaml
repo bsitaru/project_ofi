@@ -15,7 +15,7 @@ fixed:
   end_date: 2017-03-01
 
   selector:
-    type: 'SplitOFI'
+    type: 'OTOFI'
     volume_normalize: True
     levels: 10
 
@@ -24,6 +24,6 @@ fixed:
 
   processor:
     normalize: False
-    pca: 1
+    pca: 20
 
 

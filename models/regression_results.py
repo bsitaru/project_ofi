@@ -35,6 +35,9 @@ class AveragedRegressionResults:
         l = list(filter(lambda x: not x.contains_nan(), l))
 
         if len(l) == 0:
+            self.values = np.ndarray(shape=(0, ))
+            self.average = np.ndarray(shape=(0, ))
+            self.std = np.ndarray(shape=(0, ))
             return
 
         # self.stats_names = l[0].stats_names

@@ -86,7 +86,7 @@ def experiment_for_tickers(args, tickers: list[str], logger=None):
                 if train_x.size == 0 or test_x.size == 0 or train_y.size == 0 or test_y.size == 0:
                     continue
 
-                processor = data_processor.factory(args.processor)
+                processor = data_processor.factory_individual(args.processor)
                 train_x = processor.fit(train_x)
                 test_x = processor.process(test_x)
 
@@ -103,9 +103,17 @@ def experiment_for_tickers(args, tickers: list[str], logger=None):
             test_x = np.concatenate(test_xs)
             test_y = np.concatenate(test_ys)
 
+            processor = data_processor.factory_group(args.processor)
+            train_x = processor.fit(train_x)
+            test_x = processor.process(test_x)
+
             try:
                 results = run_linear_regression(regression_type=args.regression.type, train_dataset=(train_x, train_y),
                                                 test_dataset=(test_x, test_y))
+
+                if 'pca' in args.processor:
+                    results.values = np.concatenate([results.values, processor.explained_variance_ratio()])
+
                 res_list.append(results)
                 if results.values[1] < 0:
                     log(f'Negative OS: {results.values[1]} --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left}',
@@ -117,8 +125,11 @@ def experiment_for_tickers(args, tickers: list[str], logger=None):
     if 'pca' in args.processor:
         columns = [f"pca_{x}" for x in range(1, args.processor.pca + 1)]
     columns = ['intercept'] + columns
+    column_names = RegressionResults.column_names(columns)
+    if 'pca' in args.processor:
+        column_names += [f"pca_explained_{x}" for x in range(1, args.processor.pca + 1)]
 
-    avg_res = AveragedRegressionResults(res_list, column_names=RegressionResults.column_names(columns))
+    avg_res = AveragedRegressionResults(res_list, column_names=column_names)
     if logger is not None:
         avg_res.log(logger)
     return avg_res
@@ -165,7 +176,7 @@ def run_experiment_individual(args):
 
         results = experiment_for_tickers(tickers=[ticker], args=args, logger=logger_now)
 
-        if results.values is not None:
+        if results.average.size > 0:
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
             log(results_text, logger=logger)
 

@@ -3,6 +3,7 @@ lobster_sample/
 old/
 __pycache__/
 data/
+results_old/
 results/
 slurm_out/
 local/

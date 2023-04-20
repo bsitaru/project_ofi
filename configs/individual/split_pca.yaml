@@ -24,6 +24,6 @@ fixed:
 
   processor:
     normalize: False
-    pca: 1
+    pca: 5
 
 

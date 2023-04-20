@@ -124,6 +124,8 @@ def experiment_for_tickers(args, tickers: list[str], logger=None):
     columns = x_selector.column_names
     if 'pca' in args.processor:
         columns = [f"pca_{x}" for x in range(1, args.processor.pca + 1)]
+    if 'multipca' in args.processor:
+        columns = sum([[f"pca_{i+1}_{j+1}" for j in range(args.processor.multipca.components)] for i in range(args.processor.multipca.groups)], [])
     columns = ['intercept'] + columns
     column_names = RegressionResults.column_names(columns)
     if 'pca' in args.processor:
@@ -148,6 +150,8 @@ def naming(args):
         r += ["indvnrm"]
     if 'pca' in args.processor:
         r += ["pca", str(args.processor.pca)]
+    if 'multipca' in args.processor:
+        r += ["multipca", str(args.processor.multipca.groups), str(args.processor.multipca.components)]
     r += ["regtype", str(args.regression.type)]
     return "_".join(r)
 

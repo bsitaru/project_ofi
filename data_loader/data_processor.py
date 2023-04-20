@@ -59,6 +59,7 @@ class PCAProcessor(SkDecorator):
         ans = self.sk_component.explained_variance_ratio_
         return np.cumsum(ans)
 
+
 class MultiPCA(Decorator):
     def __init__(self, data_processor: DataProcessor, n_groups, n_components: int = None):
         super().__init__(data_processor)
@@ -74,20 +75,8 @@ class MultiPCA(Decorator):
     def process(self, x: np.ndarray):
         x = self.data_processor.process(x)
         xs = np.hsplit(x, self.n_groups)
-        xs = [pca.transfort(x) for (x, pca) in zip(xs, self.pcas)]
+        xs = [pca.transform(x) for (x, pca) in zip(xs, self.pcas)]
         return np.column_stack(xs)
-
-
-
-def factory(args):
-    processor = DataProcessor()
-    if args.normalize:
-        processor = Normalize(processor)
-    if 'pca' in args:
-        processor = PCAProcessor(processor, n_components=args.pca)
-    if 'multipca' in args:
-        processor = MultiPCA(processor, n_groups=args.multipca.groups, n_components=args.multipca.components)
-    return processor
 
 
 def factory_individual(args):
@@ -101,4 +90,6 @@ def factory_group(args):
     processor = DataProcessor()
     if 'pca' in args:
         processor = PCAProcessor(processor, n_components=args.pca)
+    if 'multipca' in args:
+        processor = MultiPCA(processor, n_groups=args.multipca.groups, n_components=args.multipca.components)
     return processor

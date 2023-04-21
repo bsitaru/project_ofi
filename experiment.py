@@ -16,7 +16,7 @@ main = typer.Typer()
 def load_yaml(config_file: str):
     with open(config_file, 'r') as stream:
         try:
-            cfg = yaml.safe_load(stream)['fixed']
+            cfg = yaml.safe_load(stream)
         except yaml.YAMLError as exc:
             print(exc)
 

@@ -11,6 +11,7 @@ import logging
 import yaml
 from models.linear_regression import run_linear_regression
 from models.regression_results import AveragedRegressionResults, RegressionResults
+from experiments.naming import args_to_name
 
 from joblib import Parallel, delayed
 
@@ -137,28 +138,9 @@ def experiment_for_tickers(args, tickers: list[str], logger=None):
     return avg_res
 
 
-def naming(args):
-    r = [args.experiment.name]
-    r += ["issize", str(args.experiment.in_sample_size)]
-    r += ["ossize", str(args.experiment.os_size)]
-    r += ["rolling", str(args.experiment.rolling)]
-    r += ["seltype", args.selector.type]
-    r += ["lvl", str(args.selector.levels)]
-    if args.selector.volume_normalize:
-        r += ["volnrm"]
-    if args.processor.normalize:
-        r += ["indvnrm"]
-    if 'pca' in args.processor:
-        r += ["pca", str(args.processor.pca)]
-    if 'multipca' in args.processor:
-        r += ["multipca", str(args.processor.multipca.groups), str(args.processor.multipca.components)]
-    r += ["regtype", str(args.regression.type)]
-    return "_".join(r)
-
-
 def experiment_init(args):
     print(f'Experiment: {args.experiment.name}')
-    results_name = naming(args)
+    results_name = args_to_name(args)
     results_path = os.path.join(args.results_path, results_name)
     if not os.path.exists(results_path):
         os.mkdir(results_path)

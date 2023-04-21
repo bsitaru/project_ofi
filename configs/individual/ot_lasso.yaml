@@ -1,28 +1,27 @@
-fixed:
-  folder_path: './lobster_sample/data_10s_extracted/'
-  temp_path: './temp/'
-  results_path: './results'
-  parallel_jobs: 1
+folder_path: './lobster_sample/data_10s_extracted/'
+temp_path: './temp/'
+results_path: './results'
+parallel_jobs: 1
 
-  experiment:
-    name: 'individual_price_impact'
-    in_sample_size: 1800  # seconds
-    os_size: 1800
-    rolling: 1800
+experiment:
+  name: 'individual_price_impact'
+  in_sample_size: 1800  # seconds
+  os_size: 1800
+  rolling: 1800
 
-  tickers: [ 'AAPL', 'FB' ]
-  start_date: null
-  end_date: null
+tickers: [ 'AAPL', 'FB' ]
+start_date: null
+end_date: null
 
-  selector:
-    type: 'OTOFI'
-    volume_normalize: True
-    levels: 10
+selector:
+  type: 'OTOFI'
+  volume_normalize: True
+  levels: 10
 
-  regression:
-    type: 'lasso'
+regression:
+  type: 'lasso'
 
-  processor:
-    normalize: False
+processor:
+  normalize: False
 
 

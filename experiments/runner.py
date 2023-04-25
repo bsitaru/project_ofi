@@ -171,8 +171,6 @@ def experiment(args, tickers: list[str], logger=None):
                 neighs_list = get_kneighbours(train_datasets.values(), args.neighbours)
                 results = []
                 for key, neighs in zip(keys, neighs_list):
-                    if key == 'ISRG':
-                        pass
                     if key not in test_datasets:
                         continue
                     train_list = []

@@ -19,6 +19,6 @@ def args_to_name(args):
     if 'clustering' in args:
         r += ["clustering", str(args.clustering.n_clusters), str(args.clustering.data)]
     if 'neighbours' in args:
-        r += ["neighbours", str(args.neighbours.neigh_size), str(args.clustering.data)]
+        r += ["neighbours", str(args.neighbours.neigh_size), str(args.neighbours.data)]
     r += ["regtype", str(args.regression.type)]
     return "_".join(r)

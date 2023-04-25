@@ -17,8 +17,8 @@ def args_to_name(args):
     if 'multipca' in args.processor:
         r += ["multipca", str(args.processor.multipca.groups), str(args.processor.multipca.components)]
     if 'clustering' in args:
-        r += ["clustering", str(args.clustering.n_clusters)]
+        r += ["clustering", str(args.clustering.n_clusters), str(args.clustering.data)]
     if 'neighbours' in args:
-        r += ["neighbours", str(args.neighbours.neigh_size)]
+        r += ["neighbours", str(args.neighbours.neigh_size), str(args.clustering.data)]
     r += ["regtype", str(args.regression.type)]
     return "_".join(r)

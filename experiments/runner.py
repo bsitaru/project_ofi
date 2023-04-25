@@ -6,7 +6,7 @@ import data_loader.one_day as loader
 import data_loader.data_processor as data_processor
 import constants
 
-from experiments.clustering import get_clusters
+from experiments.clustering import get_clusters, get_kneighbours
 from models.regression_results import RegressionResults, AveragedRegressionResults
 from models.linear_regression import run_linear_regression
 from joblib import Parallel, delayed
@@ -165,7 +165,26 @@ def experiment(args, tickers: list[str], logger=None):
                     test_x, test_y = compute_concatenated_dataset(test_list)
                     res = get_regression_results(train_x, train_y, test_x, test_y, now_tickers)
                     results.append(res)
-
+                return results
+            elif args.experiment.name in ['neigh_price_impact']:
+                keys = list(train_datasets.keys())
+                neighs_list = get_kneighbours(train_datasets.values(), args.neighbours)
+                results = []
+                for key, neighs in zip(keys, neighs_list):
+                    if key == 'ISRG':
+                        pass
+                    if key not in test_datasets:
+                        continue
+                    train_list = []
+                    now_tickers = []
+                    for i in neighs:
+                        curr_key = keys[i]
+                        now_tickers.append(curr_key)
+                        train_list.append(train_datasets[curr_key])
+                    train_x, train_y = compute_concatenated_dataset(train_list)
+                    test_x, test_y = test_datasets[key]
+                    res = get_regression_results(train_x, train_y, test_x, test_y, now_tickers)
+                    results.append(res)
                 return results
             else:
                 raise ValueError(f'invalid experiment name {args.experiment.name}')

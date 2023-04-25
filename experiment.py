@@ -46,7 +46,7 @@ def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None, us
         pi_intraday.run_experiment_individual(args)
     elif args.experiment.name == 'universal_price_impact':
         pi_intraday.run_experiment_universal(args)
-    elif args.experiment.name == 'clustered_price_impact':
+    elif args.experiment.name in ['clustered_price_impact', 'neigh_price_impact']:
         pi_intraday.run_experiment_clustered(args)
     else:
         raise ValueError(f'invalid experiment name {args.experiment.name}')

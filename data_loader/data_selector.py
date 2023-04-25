@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 
 from constants import levels_list
-from data_manipulation.bucket_ofi import compute_normalized_ofi, compute_otofi_df_from_split, compute_ofi_df_from_split, is_valid_trading_sample
+from data_manipulation.bucket_ofi import compute_normalized_ofi, compute_otofi_df_from_split, compute_ofi_df_from_split, \
+    is_valid_trading_sample
+
 
 class DataSelector:
     def __init__(self, volume_normalize: bool):
@@ -64,15 +66,16 @@ class ReturnSelector(DataSelector):
         self.column_names = 'return'
 
 
-def factory(name: str):
-    if name == 'OFI':
-        return OFISelector
-    elif name == 'SplitOFI':
-        return SplitOFISelector
-    elif name == 'OTOFI':
-        return OTOFISelector
-    elif name == 'Return':
-        return ReturnSelector
+def factory(args):
+    classes = {'OFI': OFISelector, 'SplitOFI': SplitOFISelector, 'OTOFI': OTOFISelector, 'Return': ReturnSelector}
+    if args.type not in classes.keys():
+        raise ValueError(f"invalid selector type {args.type}")
+    constructor = classes[args.type]
+    if args.type in ['OFI', 'SplitOFI', 'OTOFI']:
+        return constructor(volume_normalize=args.volume_normalize, levels=args.levels)
     else:
-        raise ValueError(f"invalid selector type {name}")
+        raise ValueError(f'invalid selector {args.type}')
 
+
+def return_factory():
+    return ReturnSelector()

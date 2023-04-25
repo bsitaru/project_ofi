@@ -32,6 +32,7 @@ class AveragedRegressionResults:
     def __init__(self, l: List, column_names: List[str] = None):
         self.column_names = column_names
 
+        l = list(filter(lambda x: x is not None, l))
         l = list(filter(lambda x: not x.contains_nan(), l))
 
         if len(l) == 0:

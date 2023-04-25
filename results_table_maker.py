@@ -16,6 +16,24 @@ def get_is_os_from_log(log_path: str):
                 r_os = round(float(l[4]), 3)
     return r_is, r_os
 
+def get_log_results(log_path: str):
+    dict = {}
+    dict_std = {}
+    found = False
+    with open(log_path, 'r') as f:
+        for line in f.readlines():
+            l = line.split(' ')
+            if l[3] == 'in_r2:':
+                found = True
+
+            if found:
+                key = l[3][:-1]
+                val = float(l[4])
+                std = float(l[7])
+                dict[key] = val
+                dict_std[key] = val
+    return dict, dict_std
+
 def get_results_from_folder(path: str):
     folders = os.listdir(path)
     folders = sorted(list(filter(lambda x: os.path.isdir(os.path.join(path, x)), folders)))
@@ -29,8 +47,18 @@ def get_results_from_folder(path: str):
         model = args.selector.type
         levels = args.selector.levels
         pca = '' if 'pca' not in args.processor else args.processor.pca
+        if 'multipca' in args.processor:
+            pca = f'multi-{args.processor.multipca.groups}-{args.processor.multipca.components}'
         regression = args.regression.type
-        table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {r_is} & {r_os} \\\\"
+        normalization = ''
+        if args.selector.volume_normalize:
+            if args.processor.normalize:
+                normalization = 'both'
+            else:
+                normalization = 'volume'
+        elif args.processor.normalize:
+            normalization = 'column'
+        table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {normalization} & {r_is} & {r_os} \\\\"
         lns.append(table_line)
     return lns
 
@@ -39,9 +67,9 @@ def table_maker(path: str):
     header = \
 """\\begin{table}[]
     \\centering
-    \\begin{tabular}{lcccc|rr}
+    \\begin{tabular}{lccccc|rr}
     \\toprule
-        Exp & Model & Levels & PCA & Regression & In Sample & Out of Sample \\\\
+        Exp & Model & Levels & PCA & Regression & Nrm & In Sample & Out of Sample \\\\
     \\midrule"""
 
     ending = \

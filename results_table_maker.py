@@ -43,7 +43,11 @@ def get_results_from_folder(path: str):
         args = ConfigDict(load_yaml(os.path.join(f_path, 'config.yaml')))
         r_is, r_os = get_is_os_from_log(os.path.join(f_path, 'logs.log'))
 
-        name = 'Individual' if args.experiment.name == 'individual_price_impact' else 'Universal'
+        if args.experiment.name not in ['clustered_price_impact', 'neigh_price_impact']:
+            continue
+
+        # name = 'Individual' if args.experiment.name == 'individual_price_impact' else 'Universal'
+        name = 'Clustered' if args.experiment.name == 'clustered_price_impact' else 'Neighbour'
         model = args.selector.type
         levels = args.selector.levels
         pca = '' if 'pca' not in args.processor else args.processor.pca
@@ -58,7 +62,21 @@ def get_results_from_folder(path: str):
                 normalization = 'volume'
         elif args.processor.normalize:
             normalization = 'column'
-        table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {normalization} & {r_is} & {r_os} \\\\"
+
+        cluster_size = None
+        if name == 'Clustered':
+            cluster_size = args.clustering.n_clusters
+        else:
+            cluster_size = args.neighbours.neigh_size
+
+        cluster_data = None
+        if name == 'Clustered':
+            cluster_data = args.clustering.data
+        else:
+            cluster_data = args.neighbours.data
+
+        # table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {normalization} & {r_is} & {r_os} \\\\"
+        table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {cluster_size} & {cluster_data} & {r_is} & {r_os} \\\\"
         lns.append(table_line)
     return lns
 
@@ -67,9 +85,9 @@ def table_maker(path: str):
     header = \
 """\\begin{table}[]
     \\centering
-    \\begin{tabular}{lccccc|rr}
+    \\begin{tabular}{lcccccc|ll}
     \\toprule
-        Exp & Model & Levels & PCA & Regression & Nrm & In Sample & Out of Sample \\\\
+        Exp & Model & Levels & PCA & Regression & Cluster Size & Data & In Sample & Out of Sample \\\\
     \\midrule"""
 
     ending = \

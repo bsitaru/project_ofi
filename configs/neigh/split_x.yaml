@@ -23,7 +23,6 @@ regression:
 
 processor:
   normalize: False
-  pca: 1
 
 neighbours:
   data: 'x'

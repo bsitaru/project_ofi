@@ -196,7 +196,7 @@ class ArchiveProcessor(ABC):
 
         os.mkdir(out_path)
         archive_path = os.path.join(folder_path, archive_name)
-        archive = py7zr.SevenZipFile(archive_path, mp=True)
+        archive = py7zr.SevenZipFile(archive_path)
         file_list = archive.getnames()
         file_list = flt.filter_list(file_list)
         archive.extract(path=out_path, targets=file_list)
@@ -205,7 +205,7 @@ class ArchiveProcessor(ABC):
         if self.verbose:
             log(f"Creating archive {archive_name}...")
         new_archive_path = os.path.join(out_path, archive_name)
-        archive = py7zr.SevenZipFile(new_archive_path, 'w', mp=True)
+        archive = py7zr.SevenZipFile(new_archive_path, 'w')
         file_list = os.listdir(folder_path)
         for file_name in file_list:
             archive.write(os.path.join(folder_path, file_name), arcname=file_name)

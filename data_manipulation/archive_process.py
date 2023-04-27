@@ -212,7 +212,7 @@ class ArchiveProcessor(ABC):
         archive.close()
 
     def process_archive(self, folder_path: str, temp_path: str, out_path: str, remove_after_process: bool,
-                        archive_output: bool, extracted_archive_processor: ExtractedArchiveProcessor):
+                        archive_output: bool, extracted_archive_processor: ExtractedArchiveProcessor, parallel_jobs: int):
         folder_path = os.path.abspath(folder_path)
         temp_path = os.path.abspath(temp_path)
         if out_path is not None:
@@ -222,7 +222,7 @@ class ArchiveProcessor(ABC):
         file_list = os.listdir(path=folder_path)
         archive_list = self.archive_filter.filter_list(file_list)
 
-        for archive_name in archive_list:
+        def process(archive_name):
             try:
                 if self.verbose:
                     log(f"Processing Archive {archive_name}...")
@@ -253,6 +253,10 @@ class ArchiveProcessor(ABC):
 
             except FileExistsError:
                 log(f"Archive is already processing? {archive_name}")
+
+        # for archive_name in archive_list:
+        #     process(archive_name)
+        Parallel(n_jobs=parallel_jobs)(delayed(process)(archive_name) for archive_name in archive_list)
 
 
 class L3ArchiveProcessor(ArchiveProcessor):

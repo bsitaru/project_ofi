@@ -4,20 +4,9 @@ import yaml
 import experiments.runner as runner
 from models.regression_results import AveragedRegressionResults
 from experiments.naming import args_to_name
-from experiments.runner import log_tickers
-from experiments.runner import log
+from logging_utils import get_logger, log, log_tickers
 
 from joblib import Parallel, delayed
-
-
-def get_logger(folder_path: str, logger_name: str = 'myapp') -> logging.Logger:
-    logger = logging.getLogger(logger_name)
-    hdlr = logging.FileHandler(os.path.join(folder_path, f"{logger_name}.log"))
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    hdlr.setFormatter(formatter)
-    logger.addHandler(hdlr)
-    logger.setLevel(logging.INFO)
-    return logger
 
 
 def experiment_init(args):
@@ -43,6 +32,7 @@ def run_experiment_individual(args):
     args.parallel_jobs = 1
     def run_experiment_for_ticker(ticker: str):
         logger_now = get_logger(results_path, ticker)
+        logger = get_logger(results_path, 'logs')
 
         results = runner.experiment(tickers=[ticker], args=args, logger=logger_now)
 

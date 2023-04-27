@@ -10,21 +10,7 @@ from experiments.clustering import get_clusters, get_kneighbours
 from models.regression_results import RegressionResults, AveragedRegressionResults
 from models.linear_regression import run_linear_regression
 from joblib import Parallel, delayed
-
-
-def log(text: str, logger=None):
-    print(text, file=sys.stderr, flush=True)
-    if logger is not None:
-        logger.info(text)
-
-
-def log_tickers(tickers):
-    if len(tickers) == 1:
-        return tickers[0]
-    elif len(tickers) <= 5:
-        return ', '.join(tickers)
-    else:
-        return ', '.join(tickers[:5]) + ' ...'
+from logging_utils import get_logger, log, log_tickers
 
 
 def flatten_list(l):
@@ -91,7 +77,10 @@ def compute_concatenated_dataset(datasets):
     return x, y
 
 
-def experiment(args, tickers: list[str], logger=None):
+def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
+    if logger is None and logger_name is not None:
+        logger = get_logger(None, logger_name)
+
     if logger is not None:
         logger.info(f"Tickers: {tickers}")
 
@@ -105,9 +94,9 @@ def experiment(args, tickers: list[str], logger=None):
 
     x_selector = data_selector.factory(args.selector)
     y_selector = data_selector.return_factory()
-
-    result_list = []
-    for d in dates:
+    def run_one_date(d):
+        if logger_name is not None:
+            logger = get_logger(None, logger_name)
         log(f"Running {d} - {log_tickers(tickers)} ...")
 
         # Load dataframes for all available tickers on this day
@@ -187,13 +176,20 @@ def experiment(args, tickers: list[str], logger=None):
             else:
                 raise ValueError(f'invalid experiment name {args.experiment.name}')
 
-        results = Parallel(n_jobs=args.parallel_jobs)(delayed(one_experiment)(t) for t in range(start_time, end_time + 1, rolling))
+        results = Parallel(n_jobs=1)(delayed(one_experiment)(t) for t in range(start_time, end_time + 1, rolling))
         results = flatten_list(results)
-        result_list += results
+        return results
 
         # for interval_left in range(start_time, end_time + 1, rolling):
         #     results = one_experiment(interval_left)
         #     result_list.append(results)
+
+    # result_list = []
+    # for d in dates:
+    #     results = run_one_date(d)
+    #     result_list += results
+    result_list = Parallel(n_jobs=args.parallel_jobs)(delayed(run_one_date)(d) for d in dates)
+    result_list = flatten_list(result_list)
 
     columns = x_selector.column_names
     if 'pca' in args.processor:

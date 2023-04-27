@@ -25,7 +25,7 @@ class DataSelector:
         return df
 
     def select_interval_df(self, df: pd.DataFrame, left: int, right: int) -> np.ndarray:
-        df = df[(df['start_time'] >= left) & (df['start_time'] < right)]
+        df = df[(df['time'] > left) & (df['time'] <= right)]
         if not is_valid_trading_sample(df):
             return pd.DataFrame().to_numpy()
         return df[self.column_names].to_numpy()

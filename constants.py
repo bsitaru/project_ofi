@@ -1,7 +1,7 @@
 from tickers import TICKERS
 
 LEVELS = 10
-ROUNDING_RET = 6
+ROUNDING_RET = 4
 ROUNDING = 4
 
 START_TRADE = (9 * 60 + 30) * 60  # 09:30

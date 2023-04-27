@@ -13,11 +13,11 @@ from data_manipulation.message import get_message_df
 from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
 
-bucket_ofi_cols = ['start_time', 'event_count', 'return', 'start_price', 'end_price'] + SPLIT_OFI_COLS + VOLUME_COLS
+bucket_ofi_cols = ['time', 'event_count', 'return', 'start_price', 'end_price'] + SPLIT_OFI_COLS + VOLUME_COLS
 sum_cols = SPLIT_OFI_COLS + VOLUME_COLS + ['event_count']
 
 c_dtype = {c: float for c in bucket_ofi_cols}
-c_dtype['start_time'] = int
+c_dtype['time'] = int
 c_dtype['event_count'] = int
 
 
@@ -106,20 +106,20 @@ def compute_otofi_df_from_split(df: pd.DataFrame) -> pd.DataFrame:
 
 def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps) -> pd.DataFrame:
     # Remove data outside range
-    df.drop(df[(df['time'] < props.start_time) | (df['time'] >= props.end_time)].index, inplace=True)
+    df.drop(df[(df['time'] <= props.start_time) | (df['time'] > props.end_time)].index, inplace=True)
 
     if df.empty:
         return empty_df()
 
     # Compute start time of bucket
-    df['start_time'] = (df['time'] // props.bucket_size).astype(int) * props.bucket_size
+    df['time'] = ((df['time'] + props.bucket_size - 1) // props.bucket_size).astype(int) * props.bucket_size
 
     # Divide OFI between types
     for i in range(1, props.levels + 1):
         for t in OFI_TYPES:
             df[f"ofi_{t}_{i}"] = np.where(df["ofi_type"] == t, df[f"ofi_{i}"], 0)
 
-    group_df = df.groupby('start_time')
+    group_df = df.groupby('time')
     df = group_df[SPLIT_OFI_COLS].agg('sum')
     df[VOLUME_COLS] = group_df[VOLUME_COLS].agg('mean')
     df['start_price'] = group_df.apply(lambda df: df['start_price'].tolist()[0])
@@ -137,7 +137,7 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
     #                                       where=df[f"volume_{i}"] != 0)
 
     # Find missing buckets and set values for them
-    all_indices = pd.Index(range(props.start_time, props.end_time, props.bucket_size)).astype(int)
+    all_indices = pd.Index(range(props.start_time + props.bucket_size, props.end_time + props.bucket_size, props.bucket_size)).astype(int)
     now_indices = df.index
     first_idx = props.end_time + 1 if len(now_indices) == 0 else now_indices[0]
     missing_indices = all_indices.difference(now_indices)
@@ -146,7 +146,7 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
     prev_prices = df.loc[prev_index, 'end_price']
 
     df = df.reindex(all_indices, fill_value=0, copy=False)
-    df['start_time'] = df.index
+    df['time'] = df.index
     # Set start and end price for missing buckets as the previous end price
     for (idx, prv) in zip(missing_indices, prev_prices):
         df.loc[idx, 'start_price'] = prv
@@ -183,7 +183,7 @@ def compute_bucket_ofi_df_from_bucket_ofi(df: pd.DataFrame, props: BucketOFIProp
     first_element = lambda s: s.iloc[0]
     last_element = lambda s: s.iloc[-1]
 
-    df = rolling_df.agg({'start_time': first_element,
+    df = rolling_df.agg({'time': last_element,
                          'start_price': first_element,
                          'end_price': last_element,
                          **{c: 'sum' for c in sum_cols}})
@@ -192,12 +192,12 @@ def compute_bucket_ofi_df_from_bucket_ofi(df: pd.DataFrame, props: BucketOFIProp
 
     pd.DataFrame.dropna(df, inplace=True)
 
-    for c in SPLIT_OFI_COLS + ['start_time', 'event_count']:
+    for c in SPLIT_OFI_COLS + ['time', 'event_count']:
         df[c] = df[c].astype(int)
     # df['start_time'] = df['start_time'].astype(int)
     # df['event_count'] = df['event_count'].astype(int)
 
-    df.drop(df[df['start_time'] % props.rolling_size != 0].index, inplace=True)
+    df.drop(df[df['time'] % props.rolling_size != 0].index, inplace=True)
 
     # Compute normalised OFI
     # for i in range(1, props.levels + 1):

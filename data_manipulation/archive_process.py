@@ -196,7 +196,7 @@ class ArchiveProcessor(ABC):
 
         os.mkdir(out_path)
         archive_path = os.path.join(folder_path, archive_name)
-        archive = py7zr.SevenZipFile(archive_path)
+        archive = py7zr.SevenZipFile(archive_path, mp=True)
         file_list = archive.getnames()
         file_list = flt.filter_list(file_list)
         archive.extract(path=out_path, targets=file_list)

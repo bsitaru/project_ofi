@@ -22,7 +22,7 @@ c_dtype['event_count'] = int
 
 
 class BucketOFIProps:
-    def __init__(self, levels: int, bucket_size: int, rounding: bool, prev_bucket_size: int = None,
+    def __init__(self, bucket_size: int, rounding: bool, prev_bucket_size: int = None, levels: int = constants.LEVELS,
                  rolling_size: int = None, start_time: int = START_TIME, end_time: int = END_TIME):
         self.levels = levels
         self.bucket_size = bucket_size
@@ -67,6 +67,8 @@ def is_valid_trading_sample(df: pd.DataFrame) -> bool:
     if df.empty:
         return False
     if (df['event_count'] == 0).values.sum() > 2:
+        return False
+    if not is_valid_df(df):
         return False
     return True
 

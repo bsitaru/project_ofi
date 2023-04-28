@@ -60,10 +60,10 @@ def l3_to_split_ofi(folder_path: str, temp_path: str, out_path: str, bucket_size
 
     archive_processor = L3ArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS, tickers=tickers)
     file_processor = L3ToSplitOFIFileProcessor(bucket_ofi_props=bucket_ofi_props,
-                                               file_filter=archive_processor.file_filter, parallel_jobs=1)
+                                               file_filter=archive_processor.file_filter, parallel_jobs=parallel_jobs)
     archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_path,
                                       remove_after_process=remove_after_process, archive_output=archive_output,
-                                      extracted_archive_processor=file_processor, parallel_jobs=parallel_jobs)
+                                      extracted_archive_processor=file_processor, parallel_jobs=1)
 
 
 @main.command()
@@ -81,11 +81,11 @@ def split_ofi_to_split_ofi(folder_path: str, temp_path: str, out_path: str, buck
                                                  tickers=tickers)
     file_processor = SplitOFIToSplitOFIFileProcessor(bucket_ofi_props=bucket_ofi_props,
                                                      file_filter=archive_processor.file_filter,
-                                                     parallel_jobs=1)
+                                                     parallel_jobs=parallel_jobs)
 
     archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_path,
                                       remove_after_process=remove_after_process, archive_output=archive_output,
-                                      extracted_archive_processor=file_processor, parallel_jobs=parallel_jobs)
+                                      extracted_archive_processor=file_processor, parallel_jobs=1)
 
 
 @main.command()

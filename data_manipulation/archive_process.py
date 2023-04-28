@@ -188,7 +188,7 @@ class ArchiveProcessor(ABC):
         self.archive_filter = None
         self.file_filter = None
 
-    def _extract_files_from_archive(self, archive_name: str, folder_path: str, out_path: str, flt: FileFilter) -> ():
+    def _extract_files_from_archive(self, archive_name: str, folder_path: str, out_path: str, flt: FileFilter, parallel_jobs: int) -> ():
         if os.path.exists(out_path):
             if self.verbose:
                 log(f"Archive already extracted {archive_name}")
@@ -196,16 +196,16 @@ class ArchiveProcessor(ABC):
 
         os.mkdir(out_path)
         archive_path = os.path.join(folder_path, archive_name)
-        archive = py7zr.SevenZipFile(archive_path)
+        archive = py7zr.SevenZipFile(archive_path, mp=(parallel_jobs > 1))
         file_list = archive.getnames()
         file_list = flt.filter_list(file_list)
         archive.extract(path=out_path, targets=file_list)
 
-    def _create_archive(self, archive_name: str, folder_path: str, out_path: str):
+    def _create_archive(self, archive_name: str, folder_path: str, out_path: str, parallel_jobs: int):
         if self.verbose:
             log(f"Creating archive {archive_name}...")
         new_archive_path = os.path.join(out_path, archive_name)
-        archive = py7zr.SevenZipFile(new_archive_path, 'w')
+        archive = py7zr.SevenZipFile(new_archive_path, 'w', mp=(parallel_jobs > 1))
         file_list = os.listdir(folder_path)
         for file_name in file_list:
             archive.write(os.path.join(folder_path, file_name), arcname=file_name)
@@ -227,13 +227,19 @@ class ArchiveProcessor(ABC):
                 if self.verbose:
                     log(f"Processing Archive {archive_name}...")
 
+                if archive_output:
+                    new_archive_name = extracted_archive_processor.get_new_archive_name(old_archive_name=archive_name)
+                    if os.path.isfile(os.path.join(out_path, new_archive_name)):
+                        if self.verbose:
+                            log(f"Already processed Archive {new_archive_name}")
+                        return
+
                 temp_folder = os.path.join(temp_path, archive_name)
                 self._extract_files_from_archive(archive_name=archive_name, folder_path=folder_path,
-                                                 out_path=temp_folder, flt=self.file_filter)
+                                                 out_path=temp_folder, flt=self.file_filter, parallel_jobs=parallel_jobs)
                 # filter_fn=partial(is_valid_data_file_name, flt=flt))
 
                 if archive_output:
-                    new_archive_name = extracted_archive_processor.get_new_archive_name(old_archive_name=archive_name)
                     new_out_path = os.path.join(out_path, new_archive_name[:-3])  # Without .7z extension
                     if not os.path.exists(new_out_path):
                         os.mkdir(new_out_path)
@@ -247,7 +253,7 @@ class ArchiveProcessor(ABC):
                     shutil.rmtree(temp_folder)
 
                 if archive_output:
-                    self._create_archive(archive_name=new_archive_name, folder_path=out_folder, out_path=out_path)
+                    self._create_archive(archive_name=new_archive_name, folder_path=out_folder, out_path=out_path, parallel_jobs=parallel_jobs)
                     if remove_after_process:
                         shutil.rmtree(new_out_path)
 

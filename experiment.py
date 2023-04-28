@@ -42,7 +42,7 @@ def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None, us
         args['results_path'] = results_path
     args = ConfigDict(args)
 
-    if args.experiment.name == 'individual_price_impact':
+    if args.experiment.name in ['individual_price_impact', 'individual_future']:
         pi_intraday.run_experiment_individual(args)
     elif args.experiment.name == 'universal_price_impact':
         pi_intraday.run_experiment_universal(args)

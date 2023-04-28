@@ -58,7 +58,7 @@ def run_linear_regression(regression_type: str, train_dataset: (np.ndarray, np.n
                           test_dataset: (np.ndarray, np.ndarray)) -> RegressionResults:
     x_train, y_train = train_dataset
     if regression_type == "linear":
-        x_train = sm.add_constant(x_train)
+        x_train = sm.add_constant(x_train, has_constant='add')
         model = sm.OLS(y_train, x_train).fit()
         results = regression_analysis(x_train, y_train, model, lib='statsmodels')
     elif regression_type == 'lasso':
@@ -71,7 +71,7 @@ def run_linear_regression(regression_type: str, train_dataset: (np.ndarray, np.n
         raise ValueError(f'invalid regression type {regression_type}')
 
     x_test, y_test = test_dataset
-    x_test = sm.add_constant(x_test)
+    x_test = sm.add_constant(x_test, has_constant='add')
     y_pred = results.predict(x_test)
     os_r2 = r2_score(y_test, y_pred)
     return RegressionResults.from_lin_reg_results(results, os_r2)

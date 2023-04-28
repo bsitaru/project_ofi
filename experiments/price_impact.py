@@ -32,9 +32,10 @@ def run_experiment_individual(args):
     args.parallel_jobs = 1
     def run_experiment_for_ticker(ticker: str):
         logger_now = get_logger(results_path, ticker)
+        logger_now.info('Starting...')
         logger = get_logger(results_path, 'logs')
 
-        results = runner.experiment(tickers=[ticker], args=args, logger=logger_now)
+        results = runner.experiment(tickers=[ticker], args=args, logger_name=ticker)
 
         if results.average.size > 0:
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
@@ -51,7 +52,7 @@ def run_experiment_individual(args):
 def run_experiment_universal(args):
     logger, results_path = experiment_init(args)
 
-    results = runner.experiment(args, tickers=args.tickers, logger=logger)
+    results = runner.experiment(args, tickers=args.tickers, logger_name='logs')
     results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
     log(results_text, logger=logger)
     results.save_pickle(os.path.join(results_path, 'universal.pickle'))
@@ -59,7 +60,7 @@ def run_experiment_universal(args):
 def run_experiment_clustered(args):
     logger, results_path = experiment_init(args)
 
-    results = runner.experiment(args, tickers=args.tickers, logger=logger)
+    results = runner.experiment(args, tickers=args.tickers, logger_name='logs')
     results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
     log(results_text, logger=logger)
     results.save_pickle(os.path.join(results_path, 'clustered.pickle'))

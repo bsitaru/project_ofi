@@ -11,6 +11,7 @@ from models.regression_results import RegressionResults, AveragedRegressionResul
 from models.linear_regression import run_linear_regression
 from joblib import Parallel, delayed
 from logging_utils import get_logger, log, log_tickers
+from data_manipulation.bucket_ofi import compute_bucket_ofi_df_from_bucket_ofi, BucketOFIProps
 
 
 def flatten_list(l):
@@ -29,15 +30,17 @@ def flatten_list(l):
     return ans
 
 
-def load_day_dataframes(d, tickers, x_selector, y_selector, args):
+def load_day_dataframes(d, tickers, x_selector, args):
     dfs = {}
     for t in tickers:
         df = loader.get_extracted_single_day_df_for_ticker(folder_path=args.folder_path, ticker=t, d=d)
-        df_x = x_selector.process(df)
-        df_y = y_selector.process(df)
-        if df_x is None or df_x.empty or df_y is None or df_y.empty:
+        if 'data_horizont' in args:
+            props = BucketOFIProps(bucket_size=args.horizont, prev_bucket_size=args.data_horizont, rolling_size=args.horizont, rounding=True)
+            df = compute_bucket_ofi_df_from_bucket_ofi(df, props)
+        df = x_selector.process(df)
+        if df is None or df.empty:
             continue
-        dfs[t] = (df_x, df_y)
+        dfs[t] = df
     return dfs
 
 
@@ -45,13 +48,13 @@ def compute_datasets_for_interval(interval_left, dfs, x_selector, y_selector, ar
     train_datasets = {}
     test_datasets = {}
     in_sample_size, os_size, rolling = args.experiment.in_sample_size, args.experiment.os_size, args.experiment.os_size
-    for (t, (df_x, df_y)) in dfs.items():
-        train_x = x_selector.select_interval_df(df_x, interval_left, interval_left + in_sample_size)
-        train_y = y_selector.select_interval_df(df_y, interval_left, interval_left + in_sample_size)
+    for (t, df) in dfs.items():
+        train_x = x_selector.select_interval_df(df, interval_left, interval_left + in_sample_size)
+        train_y = y_selector.select_interval_df(df, interval_left, interval_left + in_sample_size)
 
-        test_x = x_selector.select_interval_df(df_x, interval_left + in_sample_size,
+        test_x = x_selector.select_interval_df(df, interval_left + in_sample_size,
                                                interval_left + in_sample_size + os_size)
-        test_y = y_selector.select_interval_df(df_y, interval_left + in_sample_size,
+        test_y = y_selector.select_interval_df(df, interval_left + in_sample_size,
                                                interval_left + in_sample_size + os_size)
 
         if train_x.size == 0 or train_y.size == 0:
@@ -89,18 +92,22 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
     dates = dates_loader.get_dates_in_majority_from_folder(folder_path=args.folder_path, tickers=tickers,
                                                            start_date=args.start_date, end_date=args.end_date)
 
-    start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
-    end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - os_size - in_sample_size + 1
+    x_selector = data_selector.factory(args)
+    y_lag = args.horizont if args.experiment.name.endswith('future') else 0
+    y_selector = data_selector.return_factory(y_lag=y_lag)
 
-    x_selector = data_selector.factory(args.selector)
-    y_selector = data_selector.return_factory()
+    start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
+    if 'multi_horizonts' in args.selector:
+        start_time += args.horizont * (args.selector.multi_horizonts[-1] - 1)
+    end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - in_sample_size - os_size - y_lag + 1
+
     def run_one_date(d):
         if logger_name is not None:
             logger = get_logger(None, logger_name)
         log(f"Running {d} - {log_tickers(tickers)} ...")
 
         # Load dataframes for all available tickers on this day
-        dfs = load_day_dataframes(d, tickers, x_selector, y_selector, args)
+        dfs = load_day_dataframes(d, tickers, x_selector, args)
 
         def one_experiment(interval_left):
             train_datasets, test_datasets = compute_datasets_for_interval(interval_left, dfs, x_selector, y_selector,
@@ -130,7 +137,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                         logger=logger)
                 return None
 
-            if args.experiment.name in ['individual_price_impact', 'universal_price_impact']:
+            if args.experiment.name in ['individual_price_impact', 'universal_price_impact', 'individual_future']:
                 train_x, train_y = compute_concatenated_dataset(train_datasets.values())
                 test_x, test_y = compute_concatenated_dataset(test_datasets.values())
                 return get_regression_results(train_x, train_y, test_x, test_y, tickers)

@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import date
 from data_manipulation.archive_process import L3ArchiveProcessor, L3ToSplitOFIFileProcessor, FileFilter, BucketOFIProps, \
     SplitOFIArchiveProcessor, SplitOFIToSplitOFIFileProcessor, SplitOFIToMultidayFileProcessor, DataAssertFileProcessor, \
-    SplitOFIToExtractedProcessor
+    SplitOFIToExtractedProcessor, L3ToPricesFileProcessor
 from constants import TICKERS, LEVELS
 
 main = typer.Typer()
@@ -61,6 +61,23 @@ def l3_to_split_ofi(folder_path: str, temp_path: str, out_path: str, bucket_size
     archive_processor = L3ArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS, tickers=tickers)
     file_processor = L3ToSplitOFIFileProcessor(bucket_ofi_props=bucket_ofi_props,
                                                file_filter=archive_processor.file_filter, parallel_jobs=parallel_jobs)
+    archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_path,
+                                      remove_after_process=remove_after_process, archive_output=archive_output,
+                                      extracted_archive_processor=file_processor, parallel_jobs=1)
+
+
+@main.command()
+def l3_to_prices(folder_path: str, temp_path: str, out_path: str, bucket_size: int, tickers: str = None,
+                 start_date: str = None, end_date: str = None,
+                 remove_after_process: bool = True, archive_output: bool = True, parallel_jobs: int = 1):
+    tickers = process_tickers(tickers)
+    start_date = process_date(start_date)
+    end_date = process_date(end_date)
+    bucket_ofi_props = BucketOFIProps(levels=LEVELS, bucket_size=bucket_size, rounding=False)
+
+    archive_processor = L3ArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS, tickers=tickers)
+    file_processor = L3ToPricesFileProcessor(bucket_ofi_props=bucket_ofi_props,
+                                             file_filter=archive_processor.file_filter, parallel_jobs=parallel_jobs)
     archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_path,
                                       remove_after_process=remove_after_process, archive_output=archive_output,
                                       extracted_archive_processor=file_processor, parallel_jobs=1)

@@ -16,6 +16,7 @@ from data_manipulation.file_filters import FileFilter, L3ArchiveFilter, L3FileFi
 from data_manipulation.message import get_message_df
 from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
+from data_manipulation.prices import compute_prices_df_from_files, get_new_file_name as get_new_prices_df_file_name
 
 VERBOSE = True
 
@@ -97,6 +98,43 @@ class L3ToSplitOFIFileProcessor(ExtractedArchiveProcessor):
         levels = int(levels)
 
         name = f"{ticker}_{start_date}_{end_date}_SplitOFIBucket{self.bucket_ofi_props.bucket_size}_{levels}.7z"
+        return name
+
+
+class L3ToPricesFileProcessor(ExtractedArchiveProcessor):
+    def __init__(self, bucket_ofi_props: BucketOFIProps, file_filter: FileFilter, parallel_jobs: int = 1,
+                 verbose: bool = VERBOSE):
+        super().__init__(parallel_jobs, verbose)
+        self.bucket_ofi_props = bucket_ofi_props
+        self.file_filter = file_filter
+
+    def process_file(self, file_name: str, folder_path: str, out_path: str):
+        [ticker, d, _, _, file_type, lvl] = file_name[:-4].split('_')
+        if file_type == 'message':
+            if self.verbose:
+                log(f"Processing {file_name}...")
+            message_file_name = file_name
+            orderbook_file_name = file_name.replace('message', 'orderbook')
+            message_file_path = os.path.join(folder_path, message_file_name)
+            orderbook_file_path = os.path.join(folder_path, orderbook_file_name)
+            df = compute_prices_df_from_files(message_file=message_file_path, orderbook_file=orderbook_file_path,
+                                              props=self.bucket_ofi_props)
+            if df.empty:  # Do not save file if empty
+                return
+            new_file_name = get_new_prices_df_file_name(ticker=ticker, d=d, props=self.bucket_ofi_props)
+            new_file_path = os.path.join(out_path, new_file_name)
+            df.to_csv(new_file_path, index=False)
+
+    def get_new_archive_name(self, old_archive_name: str):
+        [ticker, start_date, end_date, levels] = old_archive_name[:-3].split('_')[6: 10]
+        start_date = date.fromisoformat(start_date)
+        end_date = date.fromisoformat(end_date)
+
+        start_date, end_date = intersect_dates(start_date, end_date, self.file_filter.start_date,
+                                               self.file_filter.end_date)
+        levels = int(levels)
+
+        name = f"{ticker}_{start_date}_{end_date}_Prices{self.bucket_ofi_props.bucket_size}_{levels}.7z"
         return name
 
 
@@ -188,7 +226,8 @@ class ArchiveProcessor(ABC):
         self.archive_filter = None
         self.file_filter = None
 
-    def _extract_files_from_archive(self, archive_name: str, folder_path: str, out_path: str, flt: FileFilter, parallel_jobs: int) -> ():
+    def _extract_files_from_archive(self, archive_name: str, folder_path: str, out_path: str, flt: FileFilter,
+                                    parallel_jobs: int) -> ():
         if os.path.exists(out_path):
             if self.verbose:
                 log(f"Archive already extracted {archive_name}")
@@ -212,7 +251,8 @@ class ArchiveProcessor(ABC):
         archive.close()
 
     def process_archive(self, folder_path: str, temp_path: str, out_path: str, remove_after_process: bool,
-                        archive_output: bool, extracted_archive_processor: ExtractedArchiveProcessor, parallel_jobs: int):
+                        archive_output: bool, extracted_archive_processor: ExtractedArchiveProcessor,
+                        parallel_jobs: int):
         folder_path = os.path.abspath(folder_path)
         temp_path = os.path.abspath(temp_path)
         if out_path is not None:
@@ -236,7 +276,8 @@ class ArchiveProcessor(ABC):
 
                 temp_folder = os.path.join(temp_path, archive_name)
                 self._extract_files_from_archive(archive_name=archive_name, folder_path=folder_path,
-                                                 out_path=temp_folder, flt=self.file_filter, parallel_jobs=parallel_jobs)
+                                                 out_path=temp_folder, flt=self.file_filter,
+                                                 parallel_jobs=parallel_jobs)
                 # filter_fn=partial(is_valid_data_file_name, flt=flt))
 
                 if archive_output:
@@ -253,7 +294,8 @@ class ArchiveProcessor(ABC):
                     shutil.rmtree(temp_folder)
 
                 if archive_output:
-                    self._create_archive(archive_name=new_archive_name, folder_path=out_folder, out_path=out_path, parallel_jobs=parallel_jobs)
+                    self._create_archive(archive_name=new_archive_name, folder_path=out_folder, out_path=out_path,
+                                         parallel_jobs=parallel_jobs)
                     if remove_after_process:
                         shutil.rmtree(new_out_path)
 

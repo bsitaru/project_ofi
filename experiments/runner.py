@@ -128,7 +128,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                     if 'pca' in args.processor:
                         results.values = np.concatenate([results.values, processor.explained_variance_ratio()])
 
-                    if results.values[1] < 0:
+                    if results.values[1] < 0 and not args.experiment.name.endswith('future'):
                         log(f'Negative OS: {results.values[1]} --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left}',
                             logger=logger)
                     return results

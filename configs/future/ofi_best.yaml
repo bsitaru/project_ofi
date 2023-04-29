@@ -9,9 +9,9 @@ experiment:
   os_size: 60
   rolling: 60
 
-tickers: [ 'AAPL', 'FB' ]
-start_date: 2017-01-01
-end_date: 2017-03-01
+tickers: [ 'AAPL']
+start_date: 2017-01-27
+end_date: 2017-01-27
 
 data_horizont: 10
 horizont: 60
@@ -20,7 +20,7 @@ selector:
   type: 'OFI'
   volume_normalize: True
   levels: 1
-  multi_horizonts: [ 1, 2, 5, 10, 20, 30 ]  # multipliers
+  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30 ]  # multipliers
 
 regression:
   type: 'lasso'

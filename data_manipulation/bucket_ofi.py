@@ -113,7 +113,7 @@ def compute_bucket_ofi_df_from_tick_ofi(df: pd.DataFrame, props: BucketOFIProps)
     if df.empty:
         return empty_df()
 
-    # Compute start time of bucket
+    # Compute end time of bucket
     df['time'] = ((df['time'] + props.bucket_size - 1) // props.bucket_size).astype(int) * props.bucket_size
 
     # Divide OFI between types

@@ -9,6 +9,14 @@ import sklearn
 import statsmodels
 from sklearn.linear_model import LassoCV
 
+def r2_oos_score(y_true, y_pred, y_train_mean):
+    # R2 in sample =     1 - Sum[ (y_pred - y_true)**2 ] / Sum[ (y_true.mean()  - y_true)**2  ]
+    # # one particular case of R2 out of sample
+    # R2 out of sample = 1 - Sum[ (y_pred - y_true)**2 ] / Sum[ (y_train.mean() - y_true)**2  ]
+
+    up = np.sum(np.power(y_pred - y_true, 2))
+    down = np.sum(np.power(y_true - y_train_mean, 2))
+    return 1.0 - up / down
 
 def regression_analysis(X, y, model, lib):
     is_statsmodels = False
@@ -37,7 +45,7 @@ def regression_analysis(X, y, model, lib):
         model_params = model.params
     else:  # sklearn model
         if has_intercept:
-            x = sm.add_constant(X)
+            x = sm.add_constant(X, has_constant='add')
             model_params = np.hstack([np.array([model.intercept_]), model.coef_])
         else:
             x = X
@@ -71,7 +79,9 @@ def run_linear_regression(regression_type: str, train_dataset: (np.ndarray, np.n
         raise ValueError(f'invalid regression type {regression_type}')
 
     x_test, y_test = test_dataset
-    x_test = sm.add_constant(x_test, has_constant='add')
+    if np.shape(results.params)[0] > np.shape(x_test)[1]:
+        x_test = sm.add_constant(x_test, has_constant='add')
     y_pred = results.predict(x_test)
-    os_r2 = r2_score(y_test, y_pred)
+    y_train_mean = np.mean(y_train)
+    os_r2 = r2_oos_score(y_test, y_pred, y_train_mean)
     return RegressionResults.from_lin_reg_results(results, os_r2)

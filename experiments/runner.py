@@ -137,7 +137,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                         logger=logger)
                 return None
 
-            if args.experiment.name in ['individual_price_impact', 'universal_price_impact', 'individual_future']:
+            if args.experiment.name in ['individual_price_impact', 'universal_price_impact', 'individual_future', 'universal_future']:
                 train_x, train_y = compute_concatenated_dataset(train_datasets.values())
                 test_x, test_y = compute_concatenated_dataset(test_datasets.values())
                 return get_regression_results(train_x, train_y, test_x, test_y, tickers)

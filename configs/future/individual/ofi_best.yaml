@@ -24,7 +24,7 @@ selector:
   multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30 ]  # multipliers
 
 regression:
-  type: 'lasso'
+  type: 'linear'
 
 processor:
   normalize: False

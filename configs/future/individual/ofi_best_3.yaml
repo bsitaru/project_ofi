@@ -10,9 +10,9 @@ experiment:
   os_size: 60
   rolling: 60
 
-tickers: [ 'AAPL']
-start_date: 2017-01-01
-end_date: 2017-02-01
+tickers: [ 'UNH']
+start_date: 2017-11-24
+end_date: 2017-11-24
 
 data_horizont: 60
 horizont: 60
@@ -24,7 +24,7 @@ selector:
   multi_horizonts: [ 1, 2, 3 ]  # multipliers
 
 regression:
-  type: 'lasso'
+  type: 'linear'
 
 processor:
   normalize: False

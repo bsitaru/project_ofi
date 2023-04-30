@@ -164,6 +164,9 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
         results = Parallel(n_jobs=1)(delayed(one_experiment)(t) for t in range(start_time, end_time + 1, rolling))
         results = list(filter(lambda x: x is not None, results))
 
+        if len(results) == 0:
+            return None
+
         pred_intervals, res, y_res = zip(*results)
 
         # Can make PNL using (pred_interval, y_res)
@@ -186,6 +189,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
     #     results = run_one_date(d)
     #     result_list += results
     result_list = Parallel(n_jobs=args.parallel_jobs)(delayed(run_one_date)(d) for d in dates)
+    result_list = list(filter(lambda x: x is not None, result_list))
 
     columns = x_selector.column_names
     if 'pca' in args.processor:

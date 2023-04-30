@@ -26,7 +26,7 @@ def load_yaml(config_file: str):
 
 
 @main.command()
-def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None, use_all: bool = None, folder_path: str = None, results_path: str = None):
+def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None, use_all: bool = None, folder_path: str = None, results_path: str = None, load_all_horizonts: bool = False):
     args = load_yaml(config_file)
     if levels is not None:
         args['selector']['levels'] = levels
@@ -40,14 +40,19 @@ def main_cmd(config_file: str, levels: int = None, parallel_jobs: int = None, us
         args['folder_path'] = folder_path
     if results_path is not None:
         args['results_path'] = results_path
+    args['load_all_horizonts'] = load_all_horizonts
     args = ConfigDict(args)
 
-    if args.experiment.name in ['individual_price_impact', 'individual_future']:
+    if args.experiment.name in ['individual_price_impact']:
         pi_intraday.run_experiment_individual(args)
-    elif args.experiment.name == 'universal_price_impact':
+    elif args.experiment.name in ['universal_price_impact']:
         pi_intraday.run_experiment_universal(args)
     elif args.experiment.name in ['clustered_price_impact', 'neigh_price_impact']:
         pi_intraday.run_experiment_clustered(args)
+    elif args.experiment.name in ['individual_future']:
+        pi_intraday.run_experiment_individual_future(args)
+    elif args.experiment.name in ['universal_future', 'clustered_future', 'neigh_future']:
+        pi_intraday.run_experiment_future(args)
     else:
         raise ValueError(f'invalid experiment name {args.experiment.name}')
 

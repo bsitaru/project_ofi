@@ -1,4 +1,4 @@
-folder_path: './lobster_sample/data_10s_extracted/'
+folder_path: './lobster_sample/data_1m_extracted/'
 temp_path: './temp/'
 results_path: './results'
 parallel_jobs: 1

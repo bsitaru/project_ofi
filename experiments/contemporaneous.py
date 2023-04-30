@@ -39,7 +39,7 @@ def load_day_dataframes(d, tickers, x_selector, args):
     return dfs
 
 
-def compute_datasets_for_interval(interval_left, dfs, x_selector, y_selector, args):
+def compute_datasets_for_interval(interval_left, dfs, x_selector, y_selector, args, add_train_if_no_test: bool = True):
     train_datasets = {}
     test_datasets = {}
     in_sample_size, os_size, rolling = args.experiment.in_sample_size, args.experiment.os_size, args.experiment.os_size
@@ -56,6 +56,8 @@ def compute_datasets_for_interval(interval_left, dfs, x_selector, y_selector, ar
             continue
 
         if test_x.size == 0 or test_y.size == 0:
+            if not add_train_if_no_test:
+                continue
             test_x, test_y = None, None
 
         processor = data_processor.factory_individual(args.processor)

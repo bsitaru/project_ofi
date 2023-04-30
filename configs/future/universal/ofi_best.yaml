@@ -1,4 +1,4 @@
-folder_path: './lobster_sample/data_10s_extracted/'
+folder_path: './lobster_sample/data_1m_extracted/'
 temp_path: './temp/'
 results_path: './results'
 parallel_jobs: 1
@@ -10,9 +10,9 @@ experiment:
   os_size: 60
   rolling: 60
 
-tickers: [ 'AAPL', 'FB']
-start_date: 2017-01-27
-end_date: 2017-01-27
+tickers: ['MS']
+start_date: 2017-11-24
+end_date: 2017-11-24
 
 horizont: 60
 

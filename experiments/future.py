@@ -1,7 +1,6 @@
 import os.path
 
 import numpy as np
-import sys
 import data_loader.dates as dates_loader
 import data_loader.data_selector as data_selector
 import data_loader.one_day as loader
@@ -76,7 +75,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
 
         def one_experiment(interval_left):
             train_datasets, test_datasets = compute_datasets_for_interval(interval_left, dfs, x_selector, y_selector,
-                                                                          args)
+                                                                          args, add_train_if_no_test=False)
             if len(test_datasets.keys()) == 0:
                 return None
 

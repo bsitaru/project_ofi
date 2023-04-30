@@ -12,6 +12,9 @@ class RegressionResults:
         vals = [in_r2, os_r2] + list(param_values) + list(tvalues) + list(pvalues)
         self.values = np.array(vals)
 
+    def set_os(self, os_r2):
+        self.values[1] = os_r2
+
     @staticmethod
     def from_lin_reg_results(results: sm.regression.linear_model.OLSResults, os_r2: float):
         return RegressionResults(in_r2=results.rsquared_adj, os_r2=os_r2, param_values=results.params,
@@ -41,15 +44,20 @@ class AveragedRegressionResults:
             self.std = np.ndarray(shape=(0, ))
             return
 
-        # self.stats_names = l[0].stats_names
         if type(l[0]) == RegressionResults:
             self.values = np.stack([r.values for r in l], axis=-1)
         elif type(l[0]) == AveragedRegressionResults:
             self.values = np.concatenate([r.values for r in l], axis=1)
-            self.column_names = l[0].column_names
+            if l[0].column_names is not None:
+                self.column_names = l[0].column_names
 
         self.average = np.average(self.values, axis=1)
         self.std = np.std(self.values, axis=1)
+
+    def set_os(self, os_r2):
+        self.average[1] = os_r2
+        for x in self.values:
+            x[1] = os_r2
 
     def summary(self):
         vals = self.average.tolist()

@@ -1,7 +1,8 @@
 import os
 import logging
 import yaml
-import experiments.runner as runner
+import experiments.contemporaneous as runner
+import experiments.future as runner_future
 from models.regression_results import AveragedRegressionResults
 from experiments.naming import args_to_name
 from logging_utils import get_logger, log, log_tickers
@@ -64,3 +65,33 @@ def run_experiment_clustered(args):
     results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
     log(results_text, logger=logger)
     results.save_pickle(os.path.join(results_path, 'clustered.pickle'))
+
+def run_experiment_individual_future(args):
+    logger, results_path = experiment_init(args)
+
+    parallel_jobs = 1
+    def run_experiment_for_ticker(ticker: str):
+        logger_now = get_logger(results_path, ticker)
+        logger_now.info('Starting...')
+        logger = get_logger(results_path, 'logs')
+
+        results = runner_future.experiment(tickers=[ticker], args=args, logger_name=ticker)
+
+        if results.average.size > 0:
+            results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
+            log(results_text, logger=logger)
+
+            results.save_pickle(os.path.join(results_path, f'{ticker}.pickle'))
+
+    Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in args.tickers)
+
+    results = AveragedRegressionResults.from_directory(results_path)
+    results.log(logger)
+
+def run_experiment_future(args):
+    logger, results_path = experiment_init(args)
+
+    results = runner_future.experiment(args, tickers=args.tickers, logger_name='logs')
+    results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
+    log(results_text, logger=logger)
+    results.save_pickle(os.path.join(results_path, 'data.pickle'))

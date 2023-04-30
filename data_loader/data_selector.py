@@ -100,13 +100,16 @@ class MultiHorizontSelector(Selector):
         # add column suffix for horizont 1
         df_list = []
         one_columns = ['return', 'event_count', 'start_price', 'end_price']
-        for h in self.horizonts:
-            df = initial_df.copy()
-            if h != 1:
+        for i, h in enumerate(self.horizonts):
+            if type(initial_df) == list:    # already loaded from file
+                df = initial_df[i]
+            else:
                 df = initial_df.copy()
-                props = BucketOFIProps(bucket_size=h * self.bucket_size, prev_bucket_size=self.bucket_size,
-                                       rolling_size=self.bucket_size, rounding=True)
-                df = compute_bucket_ofi_df_from_bucket_ofi(df, props)
+                if h != 1:
+                    df = initial_df.copy()
+                    props = BucketOFIProps(bucket_size=h * self.bucket_size, prev_bucket_size=self.bucket_size,
+                                           rolling_size=self.bucket_size, rounding=True)
+                    df = compute_bucket_ofi_df_from_bucket_ofi(df, props)
 
             df = self.selector.process(df)
             remap_dict = {f"{n}": f"{n}_{h}" for n in self.selector.column_names}

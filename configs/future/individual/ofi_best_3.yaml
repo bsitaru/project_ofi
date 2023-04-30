@@ -21,7 +21,7 @@ selector:
   type: 'OFI'
   volume_normalize: True
   levels: 1
-  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30 ]  # multipliers
+  multi_horizonts: [ 1, 2, 3 ]  # multipliers
 
 regression:
   type: 'lasso'

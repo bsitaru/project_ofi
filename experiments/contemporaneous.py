@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 import data_loader.dates as dates_loader
 import data_loader.data_selector as data_selector
 import data_loader.one_day as loader
@@ -8,10 +7,9 @@ import constants
 
 from experiments.clustering import get_clusters, get_kneighbours
 from models.regression_results import RegressionResults, AveragedRegressionResults
-from models.linear_regression import run_linear_regression
+from models.linear_regression import run_regression_results as run_linear_regression
 from joblib import Parallel, delayed
 from logging_utils import get_logger, log, log_tickers
-from data_manipulation.bucket_ofi import compute_bucket_ofi_df_from_bucket_ofi, BucketOFIProps
 
 
 def flatten_list(l):
@@ -34,9 +32,6 @@ def load_day_dataframes(d, tickers, x_selector, args):
     dfs = {}
     for t in tickers:
         df = loader.get_extracted_single_day_df_for_ticker(folder_path=args.folder_path, ticker=t, d=d)
-        if 'data_horizont' in args:
-            props = BucketOFIProps(bucket_size=args.horizont, prev_bucket_size=args.data_horizont, rolling_size=args.horizont, rounding=True)
-            df = compute_bucket_ofi_df_from_bucket_ofi(df, props)
         df = x_selector.process(df)
         if df is None or df.empty:
             continue
@@ -93,13 +88,10 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                                                            start_date=args.start_date, end_date=args.end_date)
 
     x_selector = data_selector.factory(args)
-    y_lag = args.horizont if args.experiment.name.endswith('future') else 0
-    y_selector = data_selector.return_factory(y_lag=y_lag)
+    y_selector = data_selector.return_factory(y_lag=0)
 
     start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME
-    if 'multi_horizonts' in args.selector:
-        start_time += args.horizont * (args.selector.multi_horizonts[-1] - 1)
-    end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - in_sample_size - os_size - y_lag + 1
+    end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - in_sample_size - os_size + 1
 
     def run_one_date(d):
         if logger_name is not None:
@@ -128,7 +120,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                     if 'pca' in args.processor:
                         results.values = np.concatenate([results.values, processor.explained_variance_ratio()])
 
-                    if results.values[1] < 0 and not args.experiment.name.endswith('future'):
+                    if results.values[1] < 0:
                         log(f'Negative OS: {results.values[1]} --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left}',
                             logger=logger)
                     return results
@@ -137,7 +129,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                         logger=logger)
                 return None
 
-            if args.experiment.name in ['individual_price_impact', 'universal_price_impact', 'individual_future', 'universal_future']:
+            if args.experiment.name in ['individual_price_impact', 'universal_price_impact']:
                 train_x, train_y = compute_concatenated_dataset(train_datasets.values())
                 test_x, test_y = compute_concatenated_dataset(test_datasets.values())
                 return get_regression_results(train_x, train_y, test_x, test_y, tickers)

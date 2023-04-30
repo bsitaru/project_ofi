@@ -7,6 +7,8 @@ def args_to_name(args):
     r += ["ossize", str(args.experiment.os_size)]
     r += ["rolling", str(args.experiment.rolling)]
     r += ["seltype", args.selector.type]
+    if 'multi_horizonts' in args.selector:
+        r += ['horizonts', str(len(args.selector.multi_horizonts))]
     r += ["lvl", str(args.selector.levels)]
     if args.selector.volume_normalize:
         r += ["volnrm"]

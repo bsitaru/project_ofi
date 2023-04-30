@@ -66,6 +66,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
     end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - in_sample_size - os_size - y_lag + 1
 
     def run_one_date(d):
+        logger = None
         if logger_name is not None:
             logger = get_logger(None, logger_name)
         log(f"Running {d} - {log_tickers(tickers)} ...")

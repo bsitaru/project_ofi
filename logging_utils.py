@@ -3,7 +3,7 @@ import sys
 import os
 def get_logger(folder_path: str, logger_name: str = 'myapp') -> logging.Logger:
     logger = logging.getLogger(logger_name)
-    if len(logger.handlers) == 0:
+    if len(logger.handlers) == 0 and folder_path is not None:
         hdlr = logging.FileHandler(os.path.join(folder_path, f"{logger_name}.log"))
         formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
         hdlr.setFormatter(formatter)

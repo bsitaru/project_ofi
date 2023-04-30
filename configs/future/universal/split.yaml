@@ -2,6 +2,7 @@ folder_path: './lobster_sample/data_10s_extracted/'
 temp_path: './temp/'
 results_path: './results'
 parallel_jobs: 1
+load_all_horizonts: False
 
 experiment:
   name: 'universal_future'
@@ -13,17 +14,16 @@ tickers: [ 'AAPL']
 start_date: 2017-01-27
 end_date: 2017-01-27
 
-data_horizont: 10
 horizont: 60
 
 selector:
   type: 'SplitOFI'
   volume_normalize: True
   levels: 10
-  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30 ]  # multipliers
+  multi_horizonts: [ 1, 2, 3 ]  # multipliers
 
 regression:
-  type: 'lasso'
+  type: 'linear'
 
 processor:
   normalize: False

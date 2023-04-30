@@ -51,7 +51,10 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
 
     in_sample_size, os_size, rolling = args.experiment.in_sample_size, args.experiment.os_size, args.experiment.os_size
 
-    dates = dates_loader.get_dates_in_majority_from_folder(folder_path=args.folder_path, tickers=tickers,
+    folder_path = args.folder_path
+    if args.load_all_horizonts:
+        folder_path = os.path.join(folder_path, '1')
+    dates = dates_loader.get_dates_in_majority_from_folder(folder_path=folder_path, tickers=tickers,
                                                            start_date=args.start_date, end_date=args.end_date)
 
     x_selector = data_selector.factory(args)

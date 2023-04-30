@@ -75,9 +75,11 @@ def run_experiment_individual_future(args):
         logger_now.info('Starting...')
         logger = get_logger(results_path, 'logs')
 
-        results = runner_future.experiment(tickers=[ticker], args=args, logger_name=ticker)
+        results, pred_df = runner_future.experiment(tickers=[ticker], args=args, logger_name=ticker)
 
         if results.average.size > 0:
+            pred_df.to_csv(os.path.join(results_path, f'{ticker}_predict.csv'), index=False)
+
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
             log(results_text, logger=logger)
 
@@ -91,7 +93,9 @@ def run_experiment_individual_future(args):
 def run_experiment_future(args):
     logger, results_path = experiment_init(args)
 
-    results = runner_future.experiment(args, tickers=args.tickers, logger_name='logs')
+    results, pred_df = runner_future.experiment(args, tickers=args.tickers, logger_name='logs')
+    pred_df.to_csv(os.path.join(results_path, 'predict.csv'), index=False)
+
     results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
     log(results_text, logger=logger)
     results.save_pickle(os.path.join(results_path, 'data.pickle'))

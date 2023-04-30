@@ -1,6 +1,9 @@
 import os.path
+from datetime import date
 
 import numpy as np
+import pandas as pd
+
 import data_loader.dates as dates_loader
 import data_loader.data_selector as data_selector
 import data_loader.one_day as loader
@@ -14,6 +17,8 @@ from joblib import Parallel, delayed
 from logging_utils import get_logger, log, log_tickers
 from data_manipulation.bucket_ofi import compute_bucket_ofi_df_from_bucket_ofi, BucketOFIProps
 from experiments.contemporaneous import compute_datasets_for_interval, compute_concatenated_dataset
+
+from strategy.prediction import create_prediction_df
 
 
 def load_day_dataframes(d, tickers, x_selector, args):
@@ -79,7 +84,8 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
             if len(test_datasets.keys()) == 0:
                 return None
 
-            pred_interval = (interval_left + args.experiment.in_sample_size, interval_left + args.experiment.in_sample_size + args.experiment.os_size)
+            pred_interval = (interval_left + args.experiment.in_sample_size,
+                             interval_left + args.experiment.in_sample_size + args.experiment.os_size)
 
             def get_regression_results(train_x, train_y, test_x, test_y, tickers):
                 processor = data_processor.factory_group(args.processor)
@@ -169,6 +175,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
         pred_intervals, res, y_res = zip(*results)
 
         # Can make PNL using (pred_interval, y_res)
+        pred_df = create_prediction_df(d, pred_intervals, y_res)
 
         y_true = np.array([x for d in y_res for (x, _) in d.values()])
         y_pred = np.array([x for d in y_res for (_, x) in d.values()])
@@ -177,7 +184,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
         for x in res:
             x.set_os(os_r2)
         res = AveragedRegressionResults(res)
-        return res
+        return res, pred_df
 
         # for interval_left in range(start_time, end_time + 1, rolling):
         #     results = one_experiment(interval_left)
@@ -189,6 +196,9 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
     #     result_list += results
     result_list = Parallel(n_jobs=args.parallel_jobs)(delayed(run_one_date)(d) for d in dates)
     result_list = list(filter(lambda x: x is not None, result_list))
+
+    result_list, pred_dfs = zip(*result_list)
+    pred_df = pd.concat(pred_dfs)
 
     columns = x_selector.column_names
     if 'pca' in args.processor:
@@ -202,4 +212,4 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
     avg_res = AveragedRegressionResults(result_list, column_names=column_names)
     if logger is not None:
         avg_res.log(logger)
-    return avg_res
+    return avg_res, pred_df

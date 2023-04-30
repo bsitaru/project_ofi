@@ -10,7 +10,7 @@ experiment:
   os_size: 60
   rolling: 60
 
-tickers: ['MS']
+tickers: ['MS', 'MSFT']
 start_date: 2017-11-24
 end_date: 2017-11-24
 

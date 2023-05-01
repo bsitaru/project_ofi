@@ -66,12 +66,10 @@ def is_valid_trading_sample(df: pd.DataFrame) -> bool:
         return False
     if (df['event_count'] == 0).values.sum() > 2:
         return False
-    if not is_valid_df(df):
-        return False
-    if (df['start_price'] <= 0.0001).values.any() or (df['start_price'] > 499999.0).values.any():
-        return False
-    if (df['end_price'] <= 0.0001).values.any() or (df['end_price'] > 499999.0).values.any():
-        return False
+    # if (df['start_price'] <= 0.0001).values.any() or (df['start_price'] > 499999.0).values.any():
+    #     return False
+    # if (df['end_price'] <= 0.0001).values.any() or (df['end_price'] > 499999.0).values.any():
+    #     return False
     return True
 
 

@@ -16,12 +16,13 @@ from models.linear_regression import run_regression_prediction, r2_score
 from joblib import Parallel, delayed
 from logging_utils import get_logger, log, log_tickers
 from data_manipulation.bucket_ofi import compute_bucket_ofi_df_from_bucket_ofi, BucketOFIProps
-from experiments.contemporaneous import compute_datasets_for_interval, compute_concatenated_dataset
+from experiments.contemporaneous import compute_concatenated_dataset, compute_datasets_for_interval as compitv
+from data_loader.dataset import Dataset
 
 from strategy.prediction import create_prediction_df
 
 
-def load_day_dataframes(d, tickers, x_selector, args):
+def load_day_dataframes(d, tickers, x_selector, start_time, end_time, args):
     dfs = {}
     for t in tickers:
         if args.load_all_horizonts:
@@ -42,8 +43,33 @@ def load_day_dataframes(d, tickers, x_selector, args):
         if df is None or df.empty:
             continue
 
-        dfs[t] = df
+        np_df = Dataset(df, column_names=x_selector.column_names, horizont=args.horizont, roll_y=True, start_time=start_time, end_time=end_time + args.horizont)
+        if np_df.x is None:
+            continue
+        dfs[t] = np_df
+        # dfs[t] = df
     return dfs
+
+def compute_datasets_for_interval(interval_left, dfs, args):
+    train_datasets = {}
+    test_datasets = {}
+    in_sample_size, os_size, rolling = args.experiment.in_sample_size, args.experiment.os_size, args.experiment.os_size
+    for (t, dts) in dfs.items():
+        train_x, train_y = dts.select_interval(interval_left+1, interval_left + in_sample_size)
+        test_x, test_y = dts.select_interval(interval_left+in_sample_size+1, interval_left+in_sample_size+os_size)
+
+        if train_x is None or train_y is None or test_x is None or test_y is None:
+            continue
+
+        processor = data_processor.factory_individual(args.processor)
+        train_x = processor.fit(train_x)
+        if test_x is not None:
+            test_x = processor.process(test_x)
+
+        train_datasets[t] = train_x, train_y
+        if test_x is not None:
+            test_datasets[t] = test_x, test_y
+    return train_datasets, test_datasets
 
 
 def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
@@ -67,7 +93,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
 
     start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME + args.horizont * (
             args.selector.multi_horizonts[-1] - 1)
-    end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - in_sample_size - os_size - y_lag + 1
+    end_time = constants.END_TRADE - constants.VOLATILE_TIMEFRAME - in_sample_size - os_size - y_lag
 
     def run_one_date(d):
         logger = None
@@ -76,11 +102,11 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
         log(f"Running {d} - {log_tickers(tickers)} ...")
 
         # Load dataframes for all available tickers on this day
-        dfs = load_day_dataframes(d, tickers, x_selector, args)
+        dfs = load_day_dataframes(d, tickers, x_selector, start_time, end_time + in_sample_size + os_size, args)
 
         def one_experiment(interval_left):
-            train_datasets, test_datasets = compute_datasets_for_interval(interval_left, dfs, x_selector, y_selector,
-                                                                          args, add_train_if_no_test=False)
+            train_datasets, test_datasets = compute_datasets_for_interval(interval_left, dfs, args)
+            # train_datasets, test_datasets = compitv(interval_left, dfs, x_selector, y_selector, args, add_train_if_no_test=False)
             if len(test_datasets.keys()) == 0:
                 return None
 

@@ -10,7 +10,7 @@ experiment:
   os_size: 60
   rolling: 60
 
-tickers: [ 'AAPL', 'FB', ]
+tickers: [ 'AAPL']
 start_date: 2017-01-26
 end_date: 2017-01-27
 
@@ -20,7 +20,7 @@ selector:
   type: 'OFI'
   volume_normalize: True
   levels: 10
-  multi_horizonts: [ 1, 2, 3 ]  # multipliers
+  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30]  # multipliers
 
 regression:
   type: 'linear'
@@ -28,7 +28,7 @@ regression:
 processor:
   normalize: False
   multipca:
-    groups: 3
+    groups: 7
     components: 1
 
 

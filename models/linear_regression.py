@@ -7,7 +7,7 @@ from statsmodels.tools.tools import pinv_extended
 import statsmodels.api as sm
 import sklearn
 import statsmodels
-from sklearn.linear_model import LassoCV
+from sklearn.linear_model import LassoCV, LassoLarsCV, RidgeCV
 
 
 def r2_oos_score(y_true, y_pred, y_train_mean):
@@ -70,10 +70,11 @@ def run_regression(regression_type: str, train_dataset: (np.ndarray, np.ndarray)
     if regression_type == "linear":
         x_train = sm.add_constant(x_train, has_constant='add')
         model = sm.OLS(y_train, x_train).fit()
-        results = regression_analysis(x_train, y_train, model, lib='statsmodels')
+        # results = regression_analysis(x_train, y_train, model, lib='statsmodels')
+        results = model
     elif regression_type == 'lasso':
         # model = sm.OLS(y_train, x_train).fit_regularized(method='elastic_net', L1_wt=1.)
-        model = LassoCV(fit_intercept=True, max_iter=2000)
+        model = LassoLarsCV(fit_intercept=True, max_iter=2000, cv=3)
         model.fit(x_train, y_train)
         results = regression_analysis(x_train, y_train, model, lib='sklearn')
         # print(f"is --- {results.rsquared_adj} --- alpha --- {model.alpha_}", )

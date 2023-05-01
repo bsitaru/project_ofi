@@ -23,8 +23,11 @@ class Selector(ABC):
         # interval (left, right]
         df = df[(df['time'] > left) & (df['time'] <= right)]
         if not is_valid_trading_sample(df):
-            return pd.DataFrame().to_numpy()
-        return df[self.column_names].to_numpy()
+            df = pd.DataFrame().to_numpy()
+        else:
+            df = df[self.column_names]
+        ret = df.to_numpy()
+        return ret
 
 
 class DataSelector(Selector):
@@ -50,9 +53,8 @@ class SplitOFISelector(DataSelector):
     def __init__(self, levels, **kwargs):
         super(SplitOFISelector, self).__init__(**kwargs)
         self.name = f"SplitOFI_{levels}"
-        self.column_names = self.column_names + levels_list('ofi_add', levels) + levels_list('ofi_cancel',
-                                                                                             levels) + levels_list(
-            'ofi_trade', levels)
+        self.column_names = self.column_names + levels_list('ofi_add', levels) + levels_list('ofi_cancel', levels) \
+                            + levels_list('ofi_trade', levels)
 
 
 class OTOFISelector(DataSelector):
@@ -101,7 +103,7 @@ class MultiHorizontSelector(Selector):
         df_list = []
         one_columns = ['return', 'event_count', 'start_price', 'end_price']
         for i, h in enumerate(self.horizonts):
-            if type(initial_df) == list:    # already loaded from file
+            if type(initial_df) == list:  # already loaded from file
                 df = initial_df[i]
             else:
                 df = initial_df.copy()
@@ -140,7 +142,8 @@ def factory(all_args):
     else:
         raise ValueError(f'invalid selector {args.type}')
     if 'multi_horizonts' in args:
-        selector = MultiHorizontSelector(selector=selector, horizonts=args.multi_horizonts, bucket_size=all_args.horizont)
+        selector = MultiHorizontSelector(selector=selector, horizonts=args.multi_horizonts,
+                                         bucket_size=all_args.horizont)
     return selector
 
 

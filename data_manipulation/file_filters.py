@@ -103,3 +103,17 @@ class SplitOFIFileFilter(CSVFilter):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+class PricesArchiveFilter(ArchiveFilter):
+    data_file_type = data_file.PricesArchiveFile
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+
+class PricesFileFilter(CSVFilter):
+    data_file_type = data_file.PricesCSVFile
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

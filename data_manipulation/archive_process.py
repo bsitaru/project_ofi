@@ -12,7 +12,7 @@ from data_manipulation.bucket_ofi import compute_bucket_ofi_from_files, get_new_
     get_bucket_ofi_df, compute_bucket_ofi_df_from_bucket_ofi, BucketOFIProps
 from data_manipulation.multiday_bucket_ofi import prepare_df_for_multiday
 from data_manipulation.file_filters import FileFilter, L3ArchiveFilter, L3FileFilter, SplitOFIFileFilter, \
-    SplitOFIArchiveFilter, intersect_dates
+    SplitOFIArchiveFilter, intersect_dates, PricesArchiveFilter, PricesFileFilter
 from data_manipulation.message import get_message_df
 from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.tick_ofi import compute_tick_ofi_df
@@ -322,3 +322,11 @@ class SplitOFIArchiveProcessor(ArchiveProcessor):
         self.archive_filter = SplitOFIArchiveFilter(start_date=start_date, end_date=end_date, levels=levels,
                                                     tickers=tickers)
         self.file_filter = SplitOFIFileFilter(start_date=start_date, end_date=end_date, levels=levels, tickers=tickers)
+
+class PricesArchiveProcessor(ArchiveProcessor):
+    def __init__(self, verbose: bool = VERBOSE, start_date: date = None, end_date: date = None, levels: int = None,
+                 tickers: list[str] = None):
+        super().__init__(verbose=verbose)
+        self.archive_filter = PricesArchiveFilter(start_date=start_date, end_date=end_date, levels=levels,
+                                                    tickers=tickers)
+        self.file_filter = PricesFileFilter(start_date=start_date, end_date=end_date, levels=levels, tickers=tickers)

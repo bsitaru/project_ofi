@@ -49,15 +49,15 @@ class L3CSVFile(CSVFile):
         self.d = date.fromisoformat(d)
 
 
-class SplitOFIArchiveFile(ArchiveFile):
-    def __init__(self, file_name: str):
+class ProcessedArchiveFile(ArchiveFile):
+    def __init__(self, file_name: str, arch_type: str):
         super().__init__(file_name)
         s = self.archive_name.split('_')
         if len(s) != 5:
-            raise ValueError(f"File is not a SplitOFI archive: {file_name}")
+            raise ValueError(f"File is not a {arch_type} archive: {file_name}")
         [ticker, start_date, end_date, file_type, levels] = s
-        if not file_type.startswith('SplitOFIBucket'):
-            raise ValueError(f"File is not a SplitOFI archive: {file_name}")
+        if not file_type.startswith(arch_type):
+            raise ValueError(f"File is not a {arch_type} archive: {file_name}")
         self.ticker = ticker
         self.levels = int(levels) if levels.isdigit() else 0
         self.start_date = date.fromisoformat(start_date)
@@ -65,16 +65,32 @@ class SplitOFIArchiveFile(ArchiveFile):
         # self.bucket_size = int(file_type[14:]) if file_type[14:].isdigit() else 0
 
 
-class SplitOFICSVFile(CSVFile):
-    def __init__(self, file_name):
+class SplitOFIArchiveFile(ProcessedArchiveFile):
+    def __init__(self, file_name: str):
+        super().__init__(file_name, arch_type='SplitOFIBucket')
+
+class PricesArchiveFile(ProcessedArchiveFile):
+    def __init__(self, file_name: str):
+        super().__init__(file_name, arch_type='Prices')
+
+class ProcessedCSVFile(CSVFile):
+    def __init__(self, file_name, data_type):
         super().__init__(file_name)
         s = self.csv_name.split('_')
         if len(s) != 4:
-            raise ValueError(f"File is not a SplitOFI CSV: {file_name}")
+            raise ValueError(f"File is not a {data_type} CSV: {file_name}")
         [ticker, d, file_type, levels] = s
-        if not file_type.startswith('SplitOFIBucket'):
-            raise ValueError(f"File is not a SplitOFI CSV: {file_name}")
+        if not file_type.startswith(data_type):
+            raise ValueError(f"File is not a {data_type} CSV: {file_name}")
         self.ticker = ticker
         self.levels = int(levels) if levels.isdigit() else 0
         self.d = date.fromisoformat(d)
         # self.bucket_size = int(file_type[14:]) if file_type[14:].isdigit() else 0
+
+class SplitOFICSVFile(ProcessedCSVFile):
+    def __init__(self, file_name):
+        super().__init__(file_name, data_type='SplitOFIBucket')
+
+class PricesCSVFile(ProcessedCSVFile):
+    def __init__(self, file_name):
+        super().__init__(file_name, data_type='Prices')

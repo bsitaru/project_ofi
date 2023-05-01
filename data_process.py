@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import date
 from data_manipulation.archive_process import L3ArchiveProcessor, L3ToSplitOFIFileProcessor, FileFilter, BucketOFIProps, \
     SplitOFIArchiveProcessor, SplitOFIToSplitOFIFileProcessor, SplitOFIToMultidayFileProcessor, DataAssertFileProcessor, \
-    SplitOFIToExtractedProcessor, L3ToPricesFileProcessor
+    SplitOFIToExtractedProcessor, L3ToPricesFileProcessor, PricesArchiveProcessor
 from constants import TICKERS, LEVELS
 
 main = typer.Typer()
@@ -144,6 +144,19 @@ def extract_splitofi(folder_path: str, temp_path: str, out_path: str, tickers: s
     archive_processor = SplitOFIArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS,
                                                  tickers=tickers)
     file_processor = SplitOFIToExtractedProcessor(file_filter=archive_processor.file_filter)
+    archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_path,
+                                      extracted_archive_processor=file_processor, remove_after_process=True,
+                                      archive_output=False, parallel_jobs=1)
+
+@main.command()
+def extract_prices(folder_path: str, temp_path: str, out_path: str, tickers: str = None, start_date: str = None,
+                   end_date: str = None):
+    tickers = process_tickers(tickers)
+    start_date = process_date(start_date)
+    end_date = process_date(end_date)
+    archive_processor = PricesArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS,
+                                               tickers=tickers)
+    file_processor = None
     archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_path,
                                       extracted_archive_processor=file_processor, remove_after_process=True,
                                       archive_output=False, parallel_jobs=1)

@@ -1,4 +1,4 @@
-import os.path
+import os
 from datetime import date
 
 import numpy as np

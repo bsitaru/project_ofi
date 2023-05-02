@@ -36,7 +36,7 @@ def make_strategy_portfolio(df: pd.DataFrame, logger=None):
                 price_row = pr_df.loc[pr_df['time'] <= now].iloc[-1]
                 # print(f"time {now}, date {d}, ticker {t} --- {price_row}")
                 rel_spread = price_row['rel_spread']
-                if np.abs(ret) <= rel_spread:
+                if np.abs(ret) <= rel_spread or y_train_std == 0:
                     continue
 
                 w = ret / y_train_std

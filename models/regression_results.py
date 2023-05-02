@@ -7,9 +7,8 @@ import statsmodels.api as sm
 
 
 class RegressionResults:
-    def __init__(self, in_r2: float, os_r2: float, param_values: list[float], tvalues: list[float],
-                 pvalues: list[float]):
-        vals = [in_r2, os_r2] + list(param_values) + list(tvalues) + list(pvalues)
+    def __init__(self, in_r2: float, os_r2: float, param_values: list[float], tvalues: list[float]):
+        vals = [in_r2, os_r2] + list(param_values) + list(tvalues)
         self.values = np.array(vals)
 
     def set_os(self, os_r2):
@@ -17,8 +16,12 @@ class RegressionResults:
 
     @staticmethod
     def from_lin_reg_results(results: sm.regression.linear_model.OLSResults, os_r2: float):
-        return RegressionResults(in_r2=results.rsquared_adj, os_r2=os_r2, param_values=results.params,
-                                 tvalues=results.tvalues, pvalues=results.pvalues)
+        if results.df_resid == 0:
+            in_r2 = results.rsquared
+        else:
+            in_r2 = results.rsquared_adj
+        return RegressionResults(in_r2=in_r2, os_r2=os_r2, param_values=results.params,
+                                 tvalues=results.tvalues)
 
     @staticmethod
     def column_names(cols: List[str]):

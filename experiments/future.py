@@ -122,8 +122,8 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
 
                 try:
                     results, y_pred, y_train_std = run_regression_prediction(regression_type=args.regression.type,
-                                                                train_dataset=(train_x, train_y),
-                                                                test_dataset=(test_x, test_y))
+                                                                             train_dataset=(train_x, train_y),
+                                                                             test_dataset=(test_x, test_y))
                     return results, y_pred, y_train_std
                 except Exception as e:
                     log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}',

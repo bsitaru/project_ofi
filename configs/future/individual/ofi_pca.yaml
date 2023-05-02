@@ -30,5 +30,6 @@ processor:
   multipca:
     groups: 7
     components: 1
+  standardize: False
 
 

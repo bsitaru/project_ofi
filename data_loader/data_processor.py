@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.decomposition import PCA
 
 
@@ -50,6 +50,10 @@ class Normalize(SkDecorator):
     def __init__(self, data_processor: DataProcessor):
         super().__init__(data_processor, MinMaxScaler())
 
+class Standardizer(SkDecorator):
+    def __init__(self, data_processor: DataProcessor):
+        super().__init__(data_processor, StandardScaler())
+
 
 class PCAProcessor(SkDecorator):
     def __init__(self, data_processor: DataProcessor, n_components: int = None):
@@ -92,4 +96,6 @@ def factory_group(args):
         processor = PCAProcessor(processor, n_components=args.pca)
     if 'multipca' in args:
         processor = MultiPCA(processor, n_groups=args.multipca.groups, n_components=args.multipca.components)
+    if args.standardize:
+        processor = Standardizer(processor)
     return processor

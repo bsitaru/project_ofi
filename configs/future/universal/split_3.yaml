@@ -27,5 +27,6 @@ regression:
 
 processor:
   normalize: False
+  standardize: True
 
 

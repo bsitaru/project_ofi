@@ -11,15 +11,15 @@ experiment:
   rolling: 60
 
 tickers: [ 'AAPL']
-start_date: 2017-01-01
-end_date: 2017-02-01
+start_date: 2017-01-30
+end_date: 2017-02-10
 
 horizont: 60
 
 selector:
   type: 'SplitOFI'
   volume_normalize: True
-  levels: 1
+  levels: 10
   multi_horizonts: [ 1, 2, 3 ]  # multipliers
 
 regression:
@@ -27,5 +27,6 @@ regression:
 
 processor:
   normalize: False
+  standardize: True
 
 

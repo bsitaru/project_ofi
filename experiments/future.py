@@ -1,5 +1,4 @@
 import os
-from datetime import date
 
 import numpy as np
 import pandas as pd
@@ -16,10 +15,10 @@ from models.linear_regression import run_regression_prediction, r2_score
 from joblib import Parallel, delayed
 from logging_utils import get_logger, log, log_tickers
 from data_manipulation.bucket_ofi import compute_bucket_ofi_df_from_bucket_ofi, BucketOFIProps
-from experiments.contemporaneous import compute_concatenated_dataset, compute_datasets_for_interval as compitv
+from experiments.contemporaneous import compute_concatenated_dataset
 from data_loader.dataset import Dataset
 
-from strategy.prediction import create_prediction_df
+from data_manipulation.prediction import create_prediction_df
 
 
 def load_day_dataframes(d, tickers, x_selector, start_time, end_time, args):
@@ -43,20 +42,23 @@ def load_day_dataframes(d, tickers, x_selector, start_time, end_time, args):
         if df is None or df.empty:
             continue
 
-        np_df = Dataset(df, column_names=x_selector.column_names, horizont=args.horizont, roll_y=True, start_time=start_time, end_time=end_time + args.horizont)
+        np_df = Dataset(df, column_names=x_selector.column_names, horizont=args.horizont, roll_y=True,
+                        start_time=start_time, end_time=end_time + args.horizont)
         if np_df.x is None:
             continue
         dfs[t] = np_df
         # dfs[t] = df
     return dfs
 
+
 def compute_datasets_for_interval(interval_left, dfs, args):
     train_datasets = {}
     test_datasets = {}
     in_sample_size, os_size, rolling = args.experiment.in_sample_size, args.experiment.os_size, args.experiment.os_size
     for (t, dts) in dfs.items():
-        train_x, train_y = dts.select_interval(interval_left+1, interval_left + in_sample_size)
-        test_x, test_y = dts.select_interval(interval_left+in_sample_size+1, interval_left+in_sample_size+os_size)
+        train_x, train_y = dts.select_interval(interval_left + 1, interval_left + in_sample_size)
+        test_x, test_y = dts.select_interval(interval_left + in_sample_size + 1,
+                                             interval_left + in_sample_size + os_size)
 
         if train_x is None or train_y is None or test_x is None or test_y is None:
             continue

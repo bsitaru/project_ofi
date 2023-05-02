@@ -91,7 +91,8 @@ def run_regression(regression_type: str, train_dataset: (np.ndarray, np.ndarray)
 def run_regression_prediction(regression_type: str, train_dataset: (np.ndarray, np.ndarray),
                               test_dataset: (np.ndarray, np.ndarray)) -> (RegressionResults, np.ndarray):
     results, y_pred = run_regression(regression_type, train_dataset, test_dataset)
-    return RegressionResults.from_lin_reg_results(results, 0), y_pred
+    y_train_std = np.std(np.exp(results.fittedvalues))
+    return RegressionResults.from_lin_reg_results(results, 0), y_pred, y_train_std
 
 
 def run_regression_results(regression_type: str, train_dataset: (np.ndarray, np.ndarray),

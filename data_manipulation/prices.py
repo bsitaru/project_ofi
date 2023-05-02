@@ -1,3 +1,4 @@
+import os.path
 from datetime import date
 
 import numpy as np
@@ -7,10 +8,12 @@ from data_manipulation.bucket_ofi import BucketOFIProps
 from data_manipulation.orderbook import get_orderbook_df
 from data_manipulation.message import get_message_df
 
+PRICES_PATH = './lobster_sample/prices_extracted/'
+
 c_dtype = {}
 c_dtype['time'] = int
-c_dtype['ask_price'] = int
-c_dtype['bid_price'] = int
+c_dtype['ask_price'] = float
+c_dtype['bid_price'] = float
 
 
 def empty_df():
@@ -46,6 +49,12 @@ def compute_prices_df_from_files(message_file: str, orderbook_file: str, props: 
     return df
 
 
+def compute_additional(df: pd.DataFrame) -> pd.DataFrame:
+    df['mid_price'] = (df['ask_price'] + df['bid_price']) / 2.0
+    df['rel_spread'] = (df['ask_price'] - df['bid_price']) / df['mid_price']
+    return df
+
+
 def get_new_file_name(ticker: str, d: date, props: BucketOFIProps):
     FILE_TYPE = 'Prices'
     name = '_'.join([ticker, d, f'{FILE_TYPE}{props.bucket_size}', str(props.levels)])
@@ -58,3 +67,8 @@ def get_prices_df(file_path: str) -> pd.DataFrame:
         return df
     except:
         return empty_df()
+
+
+def get_prices_df_for_ticker_date(ticker: str, d: str):
+    file_path = os.path.join(PRICES_PATH, ticker, f"{d}.csv")
+    return get_prices_df(file_path)

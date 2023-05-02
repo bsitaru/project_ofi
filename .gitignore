@@ -8,3 +8,4 @@ results/
 slurm_out/
 local/
 *.pickle
+*.csv

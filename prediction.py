@@ -2,6 +2,7 @@ import os
 import data_manipulation.prediction as pred
 import typer
 import strategy.sign as stsign
+import strategy.portfolio as stportfolio
 
 from logging_utils import get_logger
 
@@ -28,6 +29,13 @@ def sign(folder_path: str):
     text = f"TOTAL --- ratio: {ratio} --- correct: {all_correct} --- total: {all_tot}"
     print(text)
     logger.info(text)
+
+@main.command()
+def portfolio(folder_path: str):
+    logger = get_logger(folder_path, 'portfolio')
+    df = pred.get_all_predictions(folder_path)
+    logger.info("Predictions loaded...")
+    stportfolio.make_strategy_portfolio(df, logger)
 
 
 if __name__ == '__main__':

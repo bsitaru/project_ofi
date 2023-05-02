@@ -121,25 +121,25 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                 test_x = processor.process(test_x)
 
                 try:
-                    results, y_pred = run_regression_prediction(regression_type=args.regression.type,
+                    results, y_pred, y_train_std = run_regression_prediction(regression_type=args.regression.type,
                                                                 train_dataset=(train_x, train_y),
                                                                 test_dataset=(test_x, test_y))
-                    return results, y_pred
+                    return results, y_pred, y_train_std
                 except Exception as e:
                     log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}',
                         logger=logger)
                 return None, None
 
-            def compute_y_res(keys, test_y, y_pred):
-                return {t: (y_tr, y_pr) for t, y_tr, y_pr in zip(keys, test_y.tolist(), y_pred.tolist())}
+            def compute_y_res(keys, test_y, y_pred, y_true_std):
+                return {t: (y_tr, y_pr, y_true_std) for t, y_tr, y_pr in zip(keys, test_y.tolist(), y_pred.tolist())}
 
             if args.experiment.name in ['individual_future', 'universal_future']:
                 train_x, train_y = compute_concatenated_dataset(train_datasets.values())
                 test_x, test_y = compute_concatenated_dataset(test_datasets.values())
-                results, y_pred = get_regression_results(train_x, train_y, test_x, test_y, tickers)
+                results, y_pred, y_train_std = get_regression_results(train_x, train_y, test_x, test_y, tickers)
                 if results is None:
                     return None
-                y_res = compute_y_res(list(test_datasets.keys()), test_y, y_pred)
+                y_res = compute_y_res(list(test_datasets.keys()), test_y, y_pred, y_train_std)
                 return pred_interval, results, y_res
 
             elif args.experiment.name in ['clustered_future']:
@@ -163,9 +163,9 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                     if len(test_list) == 0:
                         continue
                     test_x, test_y = compute_concatenated_dataset(test_list)
-                    res, y_pred = get_regression_results(train_x, train_y, test_x, test_y, now_tickers)
+                    res, y_pred, y_train_std = get_regression_results(train_x, train_y, test_x, test_y, now_tickers)
                     if res is not None:
-                        y_res = compute_y_res(test_keys, test_y, y_pred)
+                        y_res = compute_y_res(test_keys, test_y, y_pred, y_train_std)
                         y_res_list.append(y_res)
                         results.append(res)
                 y_res = {k: v for dct in y_res_list for k, v in dct.items()}
@@ -186,9 +186,9 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                         train_list.append(train_datasets[curr_key])
                     train_x, train_y = compute_concatenated_dataset(train_list)
                     test_x, test_y = test_datasets[key]
-                    res, y_pred = get_regression_results(train_x, train_y, test_x, test_y, now_tickers)
+                    res, y_pred, y_train_std = get_regression_results(train_x, train_y, test_x, test_y, now_tickers)
                     if res is not None:
-                        y_res[key] = (test_y[0], y_pred[0])
+                        y_res[key] = (test_y[0], y_pred[0], y_train_std)
                         results.append(res)
                 return pred_interval, AveragedRegressionResults(results), y_res
             else:
@@ -205,8 +205,8 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
         # Can make PNL using (pred_interval, y_res)
         pred_df = create_prediction_df(d, pred_intervals, y_res)
 
-        y_true = np.array([x for d in y_res for (x, _) in d.values()])
-        y_pred = np.array([x for d in y_res for (_, x) in d.values()])
+        y_true = np.array([x for d in y_res for (x, _, _) in d.values()])
+        y_pred = np.array([x for d in y_res for (_, x, _) in d.values()])
         os_r2 = r2_score(y_true, y_pred)
         res = list(res)
         for x in res:

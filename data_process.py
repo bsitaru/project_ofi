@@ -156,7 +156,7 @@ def extract_prices(folder_path: str, temp_path: str, out_path: str, tickers: str
     end_date = process_date(end_date)
     archive_processor = PricesArchiveProcessor(start_date=start_date, end_date=end_date, levels=LEVELS,
                                                tickers=tickers)
-    file_processor = None
+    file_processor = SplitOFIToExtractedProcessor(file_filter=archive_processor.file_filter)
     archive_processor.process_archive(folder_path=folder_path, temp_path=temp_path, out_path=out_path,
                                       extracted_archive_processor=file_processor, remove_after_process=True,
                                       archive_output=False, parallel_jobs=1)

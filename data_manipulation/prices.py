@@ -69,6 +69,6 @@ def get_prices_df(file_path: str) -> pd.DataFrame:
         return empty_df()
 
 
-def get_prices_df_for_ticker_date(ticker: str, d: str):
+def get_prices_df_for_ticker_date(ticker: str, d):
     file_path = os.path.join(PRICES_PATH, ticker, f"{d}.csv")
     return get_prices_df(file_path)

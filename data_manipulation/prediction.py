@@ -34,9 +34,11 @@ def create_prediction_df(d, pred_intervals, y_res):
 def get_prediction_df(file_path: str) -> pd.DataFrame:
     try:
         df = pd.read_csv(file_path, dtype=c_dtype)
+        df['date'] = df['date'].apply(date.fromisoformat)
         return df
     except:
         return empty_df()
+
 
 def get_all_predictions(folder_path: str) -> pd.DataFrame:
     file_list = os.listdir(folder_path)

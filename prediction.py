@@ -1,4 +1,6 @@
 import os
+from datetime import date
+
 import data_manipulation.prediction as pred
 import typer
 import strategy.sign as stsign
@@ -30,12 +32,17 @@ def sign(folder_path: str):
     print(text)
     logger.info(text)
 
+
 @main.command()
-def portfolio(folder_path: str):
+def portfolio(folder_path: str, start_date=None, end_date=None):
+    if start_date is not None:
+        start_date = date.fromisoformat(start_date)
+    if end_date is not None:
+        end_date = date.fromisoformat(end_date)
     logger = get_logger(folder_path, 'portfolio')
     df = pred.get_all_predictions(folder_path)
     logger.info("Predictions loaded...")
-    stportfolio.make_strategy_portfolio(df, logger)
+    stportfolio.make_strategy_portfolio(df, logger, start_date=start_date, end_date=end_date)
 
 
 if __name__ == '__main__':

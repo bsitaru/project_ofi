@@ -91,7 +91,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
 
     x_selector = data_selector.factory(args)
     y_lag = args.horizont
-    y_selector = data_selector.return_factory(y_lag=y_lag)
+    # y_selector = data_selector.return_factory(y_lag=y_lag)
 
     start_time = constants.START_TRADE + constants.VOLATILE_TIMEFRAME + args.horizont * (
             args.selector.multi_horizonts[-1] - 1)
@@ -128,7 +128,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
                 except Exception as e:
                     log(f'Error --- ticker {log_tickers(tickers)} --- day {d} --- time {interval_left} --- {e}',
                         logger=logger)
-                return None, None
+                return None, None, None
 
             def compute_y_res(keys, test_y, y_pred, y_true_std):
                 return {t: (y_tr, y_pr, y_true_std) for t, y_tr, y_pr in zip(keys, test_y.tolist(), y_pred.tolist())}

@@ -83,7 +83,7 @@ def run_experiment_individual_future(args):
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
             log(results_text, logger=logger)
 
-            results.save_pickle(os.path.join(results_path, f'{ticker}.pickle'))
+            # results.save_pickle(os.path.join(results_path, f'{ticker}.pickle'))
 
     Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in args.tickers)
 

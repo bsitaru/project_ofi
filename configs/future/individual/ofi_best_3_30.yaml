@@ -1,0 +1,32 @@
+folder_path: './lobster_sample/data_1m_extracted/'
+temp_path: './temp/'
+results_path: './results'
+parallel_jobs: 1
+load_all_horizonts: False
+
+experiment:
+  name: 'individual_future'
+  in_sample_size: 1800  # seconds
+  os_size: 60
+  rolling: 60
+
+tickers: [ 'AAPL', 'FB', 'UNH' ]
+start_date: 2017-01-30
+end_date: 2017-02-10
+
+horizont: 60
+
+selector:
+  type: 'OFI'
+  volume_normalize: True
+  levels: 1
+  multi_horizonts: [ 1, 2, 3 ]  # multipliers
+
+regression:
+  type: 'linear'
+
+processor:
+  normalize: False
+  standardize: False
+
+

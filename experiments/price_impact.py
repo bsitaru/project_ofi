@@ -98,4 +98,4 @@ def run_experiment_future(args):
 
     results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
     log(results_text, logger=logger)
-    results.save_pickle(os.path.join(results_path, 'data.pickle'))
+    # results.save_pickle(os.path.join(results_path, 'data.pickle'))

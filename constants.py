@@ -1,3 +1,5 @@
+from datetime import date
+
 from tickers import TICKERS
 
 LEVELS = 10
@@ -12,6 +14,8 @@ START_TIME = START_TRADE + VOLATILE_TIMEFRAME
 END_TIME = END_TRADE - VOLATILE_TIMEFRAME
 
 BUCKET_SIZE = 10  # seconds
+
+EARLY_CLOSING_DAYS = [date.fromisoformat(d) for d in ['2017-07-03', '2017-11-24', '2018-07-03', '2018-11-23', '2018-12-24', '2019-07-03', '2019-11-29', '2019-12-24']]
 
 
 def levels_list(name: str, levels: int = LEVELS) -> list[str]:

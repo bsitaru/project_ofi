@@ -88,6 +88,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
         folder_path = os.path.join(folder_path, '1')
     dates = dates_loader.get_dates_in_majority_from_folder(folder_path=folder_path, tickers=tickers,
                                                            start_date=args.start_date, end_date=args.end_date)
+    dates = list(set(dates) - set(constants.EARLY_CLOSING_DAYS))
 
     x_selector = data_selector.factory(args)
     y_lag = args.horizont

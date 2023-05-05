@@ -111,7 +111,7 @@ def get_portfolio_results_from_log(log_path: str):
     with open(log_path, 'r') as f:
         for line in f.readlines():
             l = line.split(' ')
-            if l[3] == 'overall' and l[4] == 'results':
+            if l[3] == 'overall':
                 found = True
 
             if found and last_mean_pnl:
@@ -138,6 +138,8 @@ def get_future_results_from_folder(path: str):
         pca = '' if 'pca' not in args.processor else args.processor.pca
         if 'multipca' in args.processor:
             pca = f'multi-{args.processor.multipca.groups}-{args.processor.multipca.components}'
+        if pca != '':
+            pca = 'yes'
         regression = args.regression.type
         horizonts = len(args.selector.multi_horizonts)
 

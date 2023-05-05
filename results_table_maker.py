@@ -116,6 +116,7 @@ def get_portfolio_results_from_log(log_path: str):
 
             if found and last_mean_pnl:
                 val = float(l[11])
+                val = round(val, ndigits=4)
                 return val
 
             last_mean_pnl = l[3] == 'Mean'

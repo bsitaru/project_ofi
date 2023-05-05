@@ -6,13 +6,13 @@ load_all_horizonts: False
 
 experiment:
   name: 'individual_future'
-  in_sample_size: 1800  # seconds
+  in_sample_size: 1740  # seconds
   os_size: 60
   rolling: 60
 
-tickers: [ 'AAPL', 'FB', 'UNH' ]
-start_date: 2017-01-30
-end_date: 2017-02-10
+tickers: [ 'AAPL']
+start_date: 2017-01-01
+end_date: 2017-02-01
 
 horizont: 60
 
@@ -20,10 +20,10 @@ selector:
   type: 'OFI'
   volume_normalize: True
   levels: 1
-  multi_horizonts: [ 1, 2, 3 ]  # multipliers
+  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30 ]  # multipliers
 
 regression:
-  type: 'linear'
+  type: 'lasso'
 
 processor:
   normalize: False

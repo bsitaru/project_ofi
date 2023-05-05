@@ -102,5 +102,70 @@ def table_maker(path: str):
     answer = '\n'.join([header] + l + [ending])
     print(answer)
 
+
+def get_portfolio_results_from_log(log_path: str):
+    dict = {}
+    dict_std = {}
+    found = False
+    last_mean_pnl = False
+    with open(log_path, 'r') as f:
+        for line in f.readlines():
+            l = line.split(' ')
+            if l[3] == 'overall' and l[4] == 'results':
+                found = True
+
+            if found and last_mean_pnl:
+                val = float(l[11])
+                return val
+
+            last_mean_pnl = l[3] == 'Mean'
+    return None
+
+def get_future_results_from_folder(path: str):
+    folders = os.listdir(path)
+    folders = sorted(list(filter(lambda x: os.path.isdir(os.path.join(path, x)), folders)))
+    lns = []
+    for f in folders:
+        f_path = os.path.join(path, f)
+        args = ConfigDict(load_yaml(os.path.join(f_path, 'config.yaml')))
+        r_is, r_os = get_is_os_from_log(os.path.join(f_path, 'logs.log'))
+        pnl = get_portfolio_results_from_log(os.path.join(f_path, 'portfolio.log'))
+
+        # name = 'Individual' if args.experiment.name == 'individual_price_impact' else 'Universal'
+        name = args.experiment.name.split('_')[0]
+        model = args.selector.type
+        levels = args.selector.levels
+        pca = '' if 'pca' not in args.processor else args.processor.pca
+        if 'multipca' in args.processor:
+            pca = f'multi-{args.processor.multipca.groups}-{args.processor.multipca.components}'
+        regression = args.regression.type
+        horizonts = len(args.selector.multi_horizonts)
+
+        # table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {normalization} & {r_is} & {r_os} \\\\"
+        table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {horizonts} & {r_is} & {r_os} & {pnl} \\\\"
+        lns.append(table_line)
+    return lns
+@main.command()
+def future_table_maker(path: str):
+    header = \
+        """\\begin{table}[]
+            \\centering
+            \\begin{tabular}{lccccc|ll|l}
+            \\toprule
+                Exp & Model & Levels & PCA & Regression & Horizonts & In Sample & Out of Sample & PnL \\\\
+            \\midrule"""
+
+    ending = \
+        """\\bottomrule
+            \\end{tabular}
+            \\caption{Results}
+            \\label{tab.results}
+        \\end{table}
+        """
+
+    l = get_future_results_from_folder(path)
+    answer = '\n'.join([header] + l + [ending])
+    print(answer)
+
 if __name__ == '__main__':
     main()

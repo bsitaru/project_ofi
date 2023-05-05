@@ -91,6 +91,8 @@ def make_strategy_portfolio(df: pd.DataFrame, logger=None, start_date=None, end_
             all_rets.append(tot_ret)
 
         all_rets = np.array(all_rets)
+        if all_rets.size == 0:
+            return 0.0, 0.0
         return np.mean(all_rets - 1.0), np.product(all_rets) - 1.0
 
     all_profits_mean, all_profits_prod = [], []

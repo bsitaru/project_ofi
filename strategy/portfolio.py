@@ -58,9 +58,6 @@ def make_strategy_portfolio(df: pd.DataFrame, logger=None, start_date=None, end_
                 tot_weights += np.abs(w)
                 weights[t] = w
 
-                # if np.sign(y_pred) != np.sign(y_true):
-                #     print(f"negative --- ticker {t} --- weight {w} --- y_true {y_true} --- {y_pred}")
-
             if len(weights) == 0:
                 continue
 
@@ -80,32 +77,24 @@ def make_strategy_portfolio(df: pd.DataFrame, logger=None, start_date=None, end_
                     ret = price_next[3] / price_now[3]
                     # ret = price_next[2] / price_now[1]
 
-                # if np.sign(ret - 1.0) != np.sign(ret2 - 1.0):
-                #     print(f"ret {ret} --- ret2 {ret2} --- w {w} --- price_now {price_now[1]} {price_now[2]} {price_now[3]} --- price_next {price_next[1]} {price_next[2]} {price_next[3]} --- y {y_true} {y_pred} --- spread {np.exp(y_pred) - 1.0} {price_now[4]} ")
-
-                # if ret < 1.0:
-                #     print(f"negative profit --- ticker {t} --- weight {w} --- ret {ret}")
-
                 rets.append(np.abs(w) * ret)
             tot_ret = sum(rets)
             all_rets.append(tot_ret)
 
         all_rets = np.array(all_rets)
         if all_rets.size == 0:
-            return 0.0, 0.0
-        return np.mean(all_rets - 1.0), np.product(all_rets) - 1.0
+            return 0.0
+        return np.mean(all_rets - 1.0)
 
-    all_profits_mean, all_profits_prod = [], []
+    all_profits = []
     for d in dates:
         if d in constants.EARLY_CLOSING_DAYS:
             continue
         date_df = date_dfs.get_group(d)
-        ret_mean, ret_prod = solve_date(d, date_df)
-        log(f'date {d} pnl --- {ret_mean} --- {ret_prod}')
-        all_profits_mean.append(ret_mean)
-        all_profits_prod.append(ret_prod)
+        ret = solve_date(d, date_df)
+        log(f'date {d} pnl --- {ret}')
+        all_profits.append(ret)
 
-    stats_mean = StrategyResults(all_profits_mean)
-    stats_prod = StrategyResults(all_profits_prod)
-    return stats_mean, stats_prod
+    stats_mean = StrategyResults(all_profits)
+    return stats_mean
 

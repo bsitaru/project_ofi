@@ -20,11 +20,9 @@ quarters = [('2017-01-01', '2017-03-31'), ('2017-04-01', '2017-06-30'), ('2017-0
             ('2019-10-01', '2019-12-31')]
 
 
-def print_pnl(stats_mean, stats_prod, logger):
+def print_pnl(stats_mean, logger):
     log('Mean PnL: ', logger=logger)
     stats_mean.print(logger)
-    log('Product PnL: ', logger=logger)
-    stats_prod.print(logger)
 
 
 @main.command()
@@ -58,9 +56,9 @@ def portfolio(folder_path: str, start_date=None, end_date=None):
     logger = get_logger(folder_path, 'portfolio')
     df = pred.get_all_predictions(folder_path)
     logger.info("Predictions loaded...")
-    stats_mean, stats_prod = stportfolio.make_strategy_portfolio(df, logger, start_date=start_date, end_date=end_date)
+    stats_mean = stportfolio.make_strategy_portfolio(df, logger, start_date=start_date, end_date=end_date)
 
-    print_pnl(stats_mean, stats_prod, logger)
+    print_pnl(stats_mean, logger)
 
 
 @main.command()
@@ -69,23 +67,20 @@ def portfolio_quarters(folder_path: str):
     df = pred.get_all_predictions(folder_path)
     logger.info("Predictions loaded...")
 
-    mn, prd = [], []
+    mn = []
     for (start_date, end_date) in quarters:
         log(f"quarter {start_date} {end_date}", logger=logger)
-        stats_mean, stats_prod = stportfolio.make_strategy_portfolio(df, logger,
-                                                                     start_date=date.fromisoformat(start_date),
-                                                                     end_date=date.fromisoformat(end_date))
+        stats_mean = stportfolio.make_strategy_portfolio(df, logger,
+                                                         start_date=date.fromisoformat(start_date),
+                                                         end_date=date.fromisoformat(end_date))
 
         log(f"quarter {start_date} {end_date} results", logger=logger)
-        print_pnl(stats_mean, stats_prod, logger)
-
+        print_pnl(stats_mean, logger)
         mn.append(stats_mean)
-        prd.append(stats_prod)
 
     log(f"overall results", logger=logger)
     stats_mean = StrategyResults.from_strategy_results_list(mn)
-    stats_prod = StrategyResults.from_strategy_results_list(prd)
-    print_pnl(stats_mean, stats_prod, logger)
+    print_pnl(stats_mean, logger)
 
 
 if __name__ == '__main__':

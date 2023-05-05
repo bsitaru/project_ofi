@@ -187,3 +187,12 @@ def print_future_stats(args, results, logger):
             name = name.split('_')
             return f"{name[-2]}_{name[-1]}"
         group(get_level_and_horizont, grouping_type='level and horizont')
+
+    def print_nonempty_regressions(results):
+        vals = np.transpose(results.values[tot_values+4:, :])
+        sum_rows = np.sum(vals, axis=1)
+        count = np.count_nonzero(sum_rows)
+        num_tot = np.size(sum_rows)
+        ans = float(count) / float(num_tot)
+        logger.info(f"Non empty regressions: {ans} --- {count} / {num_tot}")
+    print_nonempty_regressions(results)

@@ -5,14 +5,14 @@ parallel_jobs: 1
 load_all_horizonts: False
 
 experiment:
-  name: 'individual_future'
+  name: 'universal_future'
   in_sample_size: 1740  # seconds
   os_size: 60
   rolling: 60
 
-tickers: [ 'AAPL']
-start_date: 2017-01-26
-end_date: 2017-01-27
+tickers: ['MS', 'MSFT']
+start_date: 2017-11-24
+end_date: 2017-11-24
 
 horizont: 60
 
@@ -20,16 +20,13 @@ selector:
   type: 'OFI'
   volume_normalize: True
   levels: 10
-  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30]  # multipliers
+  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30 ]  # multipliers
 
 regression:
   type: 'lasso'
 
 processor:
   normalize: False
-  multipca:
-    groups: 7
-    components: 1
   standardize: True
 
 

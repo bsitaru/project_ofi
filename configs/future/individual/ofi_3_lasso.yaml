@@ -10,14 +10,14 @@ experiment:
   os_size: 60
   rolling: 60
 
-tickers: [ 'AAPL', 'FB']
+tickers: [ 'AAPL', 'FB' ]
 start_date: 2017-01-30
-end_date: 2017-02-10
+end_date: 2017-01-31
 
 horizont: 60
 
 selector:
-  type: 'SplitOFI'
+  type: 'OFI'
   volume_normalize: True
   levels: 10
   multi_horizonts: [ 1, 2, 3 ]  # multipliers

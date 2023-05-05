@@ -20,11 +20,6 @@ quarters = [('2017-01-01', '2017-03-31'), ('2017-04-01', '2017-06-30'), ('2017-0
             ('2019-10-01', '2019-12-31')]
 
 
-def print_pnl(stats_mean, logger):
-    log('Mean PnL: ', logger=logger)
-    stats_mean.print(logger)
-
-
 @main.command()
 def sign(folder_path: str):
     logger = get_logger(folder_path, 'pred_signs')
@@ -57,8 +52,7 @@ def portfolio(folder_path: str, start_date=None, end_date=None):
     df = pred.get_all_predictions(folder_path)
     logger.info("Predictions loaded...")
     stats_mean = stportfolio.make_strategy_portfolio(df, logger, start_date=start_date, end_date=end_date)
-
-    print_pnl(stats_mean, logger)
+    stats_mean.print(logger)
 
 
 @main.command()
@@ -75,12 +69,12 @@ def portfolio_quarters(folder_path: str):
                                                          end_date=date.fromisoformat(end_date))
 
         log(f"quarter {start_date} {end_date} results", logger=logger)
-        print_pnl(stats_mean, logger)
+        stats_mean.print(logger)
         mn.append(stats_mean)
 
     log(f"overall results", logger=logger)
     stats_mean = StrategyResults.from_strategy_results_list(mn)
-    print_pnl(stats_mean, logger)
+    stats_mean.print(logger)
 
 
 if __name__ == '__main__':

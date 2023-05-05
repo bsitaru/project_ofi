@@ -3,7 +3,7 @@ import logging
 import yaml
 import experiments.contemporaneous as runner
 import experiments.future as runner_future
-from models.regression_results import AveragedRegressionResults
+from models.regression_results import AveragedRegressionResults, print_future_stats
 from experiments.naming import args_to_name
 from logging_utils import get_logger, log, log_tickers
 
@@ -79,16 +79,23 @@ def run_experiment_individual_future(args):
 
         if results.average.size > 0:
             pred_df.to_csv(os.path.join(results_path, f'{ticker}_predict.csv'), index=False)
+            print_future_stats(args, results, logger_now)
 
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
             log(results_text, logger=logger)
 
             # results.save_pickle(os.path.join(results_path, f'{ticker}.pickle'))
+            return results
 
-    Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in args.tickers)
+        return None
 
-    results = AveragedRegressionResults.from_directory(results_path)
+    results_list = Parallel(n_jobs=parallel_jobs)(delayed(run_experiment_for_ticker)(t) for t in args.tickers)
+    results_list = list(filter(lambda x: x is not None, results_list))
+
+    # results = AveragedRegressionResults.from_directory(results_path)
+    results = AveragedRegressionResults(results_list)
     results.log(logger)
+    print_future_stats(args, results, logger)
 
 def run_experiment_future(args):
     logger, results_path = experiment_init(args)
@@ -98,4 +105,5 @@ def run_experiment_future(args):
 
     results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
     log(results_text, logger=logger)
+    print_future_stats(args, results, logger)
     # results.save_pickle(os.path.join(results_path, 'data.pickle'))

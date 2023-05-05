@@ -95,9 +95,11 @@ class AveragedRegressionResults:
         vals = list(map(lambda x: str(x), vals))
         stds = self.std.tolist()
         stds = list(map(lambda x: str(x), stds))
+        assert len(vals) == len(stds)
         if self.column_names is None:
             return [f"{v} , std {s}" for (v, s) in zip(vals, stds)]
         else:
+            assert len(vals) == len(self.column_names)
             return [f"{c}: {v} , std {s} " for (c, v, s) in zip(self.column_names, vals, stds)]
 
     def log(self, logger):
@@ -144,8 +146,10 @@ def print_future_stats(args, results, logger):
     tot_values = vars_per_horizont * horizonts
 
     # in_r2, os_r2, intercept  --- before
-    arr = results.average[tot_values + 3:].tolist()
+    arr = results.average[tot_values + 4:].tolist()
     cols = results.column_names[3:tot_values + 3]
+
+    assert len(arr) == len(cols)
 
     def group(get_group, aggr=sum, grouping_type=''):
         dct = {}

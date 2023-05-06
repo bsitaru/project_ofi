@@ -112,6 +112,7 @@ def get_portfolio_results_from_log(log_path: str):
             l = line.split(' ')
             if l[3] == 'overall':
                 found = True
+                continue
 
             if found:
                 val = float(l[11])

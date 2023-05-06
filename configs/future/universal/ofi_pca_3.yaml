@@ -19,7 +19,7 @@ horizont: 60
 selector:
   type: 'OFI'
   volume_normalize: True
-  levels: 1
+  levels: 10
   multi_horizonts: [ 1, 2, 3 ]  # multipliers
 
 regression:

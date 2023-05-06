@@ -107,19 +107,16 @@ def get_portfolio_results_from_log(log_path: str):
     dict = {}
     dict_std = {}
     found = False
-    last_mean_pnl = False
     with open(log_path, 'r') as f:
         for line in f.readlines():
             l = line.split(' ')
             if l[3] == 'overall':
                 found = True
 
-            if found and last_mean_pnl:
+            if found:
                 val = float(l[11])
                 val = round(val, ndigits=4)
                 return val
-
-            last_mean_pnl = l[3] == 'Mean'
     return None
 
 def get_future_results_from_folder(path: str):

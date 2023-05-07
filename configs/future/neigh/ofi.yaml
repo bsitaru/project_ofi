@@ -1,0 +1,36 @@
+folder_path: './lobster_sample/data_1m_extracted/'
+temp_path: './temp/'
+results_path: './results'
+parallel_jobs: 1
+load_all_horizonts: False
+
+experiment:
+  name: 'neigh_future'
+  in_sample_size: 1740  # seconds
+  os_size: 60
+  rolling: 60
+
+tickers: null
+start_date: 2017-01-10
+end_date: 2017-01-10
+
+horizont: 60
+
+selector:
+  type: 'OFI'
+  volume_normalize: True
+  levels: 10
+  multi_horizonts: [ 1, 2, 3, 5, 10, 20, 30 ]  # multipliers
+
+regression:
+  type: 'lasso'
+
+processor:
+  normalize: False
+  standardize: False
+
+neighbours:
+  data: 'y'
+  pca: 10
+  neigh_size: 10
+

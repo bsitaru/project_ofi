@@ -10,7 +10,7 @@ experiment:
   os_size: 60
   rolling: 60
 
-tickers: null
+tickers: ['AAPL', 'MSFT', 'AMZN', 'FB', 'BRK.B', 'JPM', 'GOOG', 'GOOGL', 'JNJ', 'V', 'PG', 'XOM', 'BAC', 'T', 'UNH', 'DIS', 'MA', 'INTC', 'VZ', 'HD']
 start_date: 2017-01-10
 end_date: 2017-01-10
 

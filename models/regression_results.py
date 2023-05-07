@@ -63,6 +63,7 @@ class RegressionResults:
 
 
 class AveragedRegressionResults:
+    # self.values is stored transposed compared to what you expect. (each line represents the values for a coefficient)
     def __init__(self, l: List, column_names: List[str] = None):
         self.column_names = column_names
 
@@ -87,8 +88,7 @@ class AveragedRegressionResults:
 
     def set_os(self, os_r2):
         self.average[1] = os_r2
-        for x in self.values:
-            x[1] = os_r2
+        self.values[1] = np.ones_like(self.values[0]) * os_r2
 
     def summary(self):
         vals = self.average.tolist()

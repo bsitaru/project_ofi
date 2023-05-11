@@ -3,7 +3,7 @@ import logging
 import yaml
 import experiments.contemporaneous as runner
 import experiments.future as runner_future
-from models.regression_results import AveragedRegressionResults, print_future_stats
+from models.regression_results import AveragedRegressionResults, print_future_stats, print_contemp_stats
 from experiments.naming import args_to_name
 from logging_utils import get_logger, log, log_tickers
 
@@ -39,6 +39,7 @@ def run_experiment_individual(args):
         results = runner.experiment(tickers=[ticker], args=args, logger_name=ticker)
 
         if results.average.size > 0:
+            print_contemp_stats(args, results, logger_now)
             results_text = f'{ticker} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
             log(results_text, logger=logger)
 
@@ -48,23 +49,20 @@ def run_experiment_individual(args):
 
     results = AveragedRegressionResults.from_directory(results_path)
     results.log(logger)
+    print_contemp_stats(args, results, logger)
 
+def run_experiment_universal_or_clustered(args, exp_type_name):
+    logger, results_path = experiment_init(args)
 
+    results = runner.experiment(args, tickers=args.tickers, logger_name='logs')
+    results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
+    log(results_text, logger=logger)
+    print_contemp_stats(args, results, logger)
+    results.save_pickle(os.path.join(results_path, f'{exp_type_name}.pickle'))
 def run_experiment_universal(args):
-    logger, results_path = experiment_init(args)
-
-    results = runner.experiment(args, tickers=args.tickers, logger_name='logs')
-    results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
-    log(results_text, logger=logger)
-    results.save_pickle(os.path.join(results_path, 'universal.pickle'))
-
+    run_experiment_universal_or_clustered(args, exp_type_name='universal')
 def run_experiment_clustered(args):
-    logger, results_path = experiment_init(args)
-
-    results = runner.experiment(args, tickers=args.tickers, logger_name='logs')
-    results_text = f'{log_tickers(args.tickers)} --- INS : {results.average[0]} --- OOS : {results.average[1]}'
-    log(results_text, logger=logger)
-    results.save_pickle(os.path.join(results_path, 'clustered.pickle'))
+    run_experiment_universal_or_clustered(args, exp_type_name='clustered')
 
 def run_experiment_individual_future(args):
     logger, results_path = experiment_init(args)

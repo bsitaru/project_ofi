@@ -88,6 +88,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
 
     dates = dates_loader.get_dates_in_majority_from_folder(folder_path=args.folder_path, tickers=tickers,
                                                            start_date=args.start_date, end_date=args.end_date)
+    dates = sorted(list(set(dates) - set(constants.EARLY_CLOSING_DAYS)))
 
     x_selector = data_selector.factory(args)
     y_selector = data_selector.return_factory(y_lag=0)
@@ -199,7 +200,7 @@ def experiment(args, tickers: list[str], logger=None, logger_name: str = None):
         columns = sum([[f"pca_{i + 1}_{j + 1}" for j in range(args.processor.multipca.components)] for i in
                        range(args.processor.multipca.groups)], [])
     columns = ['intercept'] + columns
-    column_names = RegressionResults.column_names(columns)
+    column_names = RegressionResults.column_names(columns, regression_type=args.regression.type)
     if 'pca' in args.processor:
         column_names += [f"pca_explained_{x}" for x in range(1, args.processor.pca + 1)]
 

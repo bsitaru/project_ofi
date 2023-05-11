@@ -10,8 +10,8 @@ experiment:
   rolling: 1800
 
 tickers: [ 'AAPL', 'FB' ]
-start_date: null
-end_date: null
+start_date: 2017-01-30
+end_date: 2017-01-30
 
 selector:
   type: 'SplitOFI'
@@ -23,5 +23,6 @@ regression:
 
 processor:
   normalize: False
+  standardize: False
 
 

@@ -126,6 +126,56 @@ class AveragedRegressionResults:
              file_name.endswith('.pickle')]
         return AveragedRegressionResults(l)
 
+def print_contemp_stats(args, results, logger):
+    if args.selector.type == 'OFI':
+        var_types = 1
+    elif args.selector.type == 'OTOFI':
+        var_types = 2
+    elif args.selector.type == 'SplitOFI':
+        var_types = 3
+    else:
+        var_types = 0
+
+    levels = args.selector.levels
+    tot_values = var_types * levels
+    if 'pca' in args.selector or 'multipca' in args.selector:
+        return
+
+    arr = results.average[tot_values + 4:].tolist()
+    cols = results.column_names[3:tot_values + 3]
+
+    assert len(arr) == len(cols)
+
+    def group(get_group, aggr=sum, grouping_type=''):
+        dct = {}
+        for (c, val) in zip(cols, arr):
+            g = get_group(c)
+            if g not in dct:
+                dct[g] = []
+            dct[g].append(val)
+
+        dct = {k: aggr(v) for k, v in dct.items()}
+        logger.info(f"Grouping by {grouping_type}:")
+        for k, v in dct.items():
+            logger.info(f"{k}: {v}")
+
+    if args.selector.type == 'SplitOFI':
+        def get_ofi_type_group(name):
+            return name.split('_')[1]
+        group(get_ofi_type_group, grouping_type='ofi type')
+    def get_level_group(name):
+        return name.split('_')[-1]
+    group(get_level_group, grouping_type='level')
+
+    def print_nonempty_regressions(results):
+        vals = np.transpose(results.values[tot_values+4:, :])
+        sum_rows = np.sum(vals, axis=1)
+        count = np.count_nonzero(sum_rows)
+        num_tot = np.size(sum_rows)
+        ans = float(count) / float(num_tot)
+        logger.info(f"Non empty regressions: {ans} --- {count} / {num_tot}")
+    print_nonempty_regressions(results)
+
 def print_future_stats(args, results, logger):
     if args.selector.type == 'OFI':
         var_types = 1

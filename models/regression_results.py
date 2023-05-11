@@ -127,7 +127,7 @@ class AveragedRegressionResults:
         return AveragedRegressionResults(l)
 
 def print_contemp_stats(args, results, logger):
-    if args.selector.type == 'OFI':
+    if args.selector.type in ['OFI', 'AddOFI']:
         var_types = 1
     elif args.selector.type == 'OTOFI':
         var_types = 2

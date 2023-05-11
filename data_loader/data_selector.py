@@ -56,6 +56,11 @@ class SplitOFISelector(DataSelector):
         self.column_names = self.column_names + levels_list('ofi_add', levels) + levels_list('ofi_cancel', levels) \
                             + levels_list('ofi_trade', levels)
 
+class AddOFISelector(DataSelector):
+    def __init__(self, levels, **kwargs):
+        super(AddOFISelector, self).__init__(**kwargs)
+        self.name = f"AddOFI_{levels}"
+        self.column_names = self.column_names + levels_list('ofi_add', levels)
 
 class OTOFISelector(DataSelector):
     def __init__(self, levels, **kwargs):
@@ -133,11 +138,11 @@ class MultiHorizontSelector(Selector):
 
 def factory(all_args):
     args = all_args.selector
-    classes = {'OFI': OFISelector, 'SplitOFI': SplitOFISelector, 'OTOFI': OTOFISelector, 'Return': ReturnSelector}
+    classes = {'OFI': OFISelector, 'SplitOFI': SplitOFISelector, 'OTOFI': OTOFISelector, 'Return': ReturnSelector, 'AddOFI': AddOFISelector}
     if args.type not in classes.keys():
         raise ValueError(f"invalid selector type {args.type}")
     constructor = classes[args.type]
-    if args.type in ['OFI', 'SplitOFI', 'OTOFI']:
+    if args.type in ['OFI', 'SplitOFI', 'OTOFI', 'AddOFI']:
         selector = constructor(volume_normalize=args.volume_normalize, levels=args.levels)
     else:
         raise ValueError(f'invalid selector {args.type}')

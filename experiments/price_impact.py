@@ -29,8 +29,7 @@ def experiment_init(args):
 def run_experiment_individual(args):
     logger, results_path = experiment_init(args)
 
-    parallel_jobs = args.parallel_jobs
-    args.parallel_jobs = 1
+    parallel_jobs = 1
     def run_experiment_for_ticker(ticker: str):
         logger_now = get_logger(results_path, ticker)
         logger_now.info('Starting...')

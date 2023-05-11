@@ -23,7 +23,7 @@ class Selector(ABC):
         # interval (left, right]
         df = df[(df['time'] > left) & (df['time'] <= right)]
         if not is_valid_trading_sample(df):
-            df = pd.DataFrame().to_numpy()
+            df = pd.DataFrame()
         else:
             df = df[self.column_names]
         ret = df.to_numpy()

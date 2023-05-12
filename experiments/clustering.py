@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, SpectralClustering
 from sklearn.neighbors import NearestNeighbors
 
 def transform_data(train_datasets, args):
@@ -20,11 +20,15 @@ def transform_data(train_datasets, args):
 def get_clusters(train_datasets, args):
     stacked = transform_data(train_datasets, args)
 
-    kmeans = KMeans(n_clusters=args.n_clusters, random_state=0, init='k-means++', n_init='auto')
-    kmeans.fit(stacked)
+    if 'spectral' in args and args.spectral:
+        model = SpectralClustering(n_clusters=args.n_clusters, random_state=0)
+    else:
+        model = KMeans(n_clusters=args.n_clusters, random_state=0, init='k-means++', n_init='auto')
+
+    model.fit(stacked)
 
     clusters = [[] for _ in range(args.n_clusters)]
-    for i, lab in enumerate(kmeans.labels_):
+    for i, lab in enumerate(model.labels_):
         clusters[lab].append(i)
     return clusters
 

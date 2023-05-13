@@ -1,0 +1,122 @@
+end_date: null
+experiment:
+  in_sample_size: 1800
+  name: individual_price_impact
+  os_size: 1800
+  rolling: 1800
+folder_path: ./lobster_sample/data_10s_extracted/
+load_all_horizonts: false
+parallel_jobs: 50
+processor:
+  normalize: false
+  standardize: false
+regression:
+  type: linear
+results_path: ./results
+selector:
+  levels: 5
+  type: SplitOFI
+  volume_normalize: true
+start_date: null
+temp_path: ./temp/
+tickers:
+- AAPL
+- MSFT
+- AMZN
+- FB
+- BRK.B
+- JPM
+- GOOG
+- GOOGL
+- JNJ
+- V
+- PG
+- XOM
+- BAC
+- T
+- UNH
+- DIS
+- MA
+- INTC
+- VZ
+- HD
+- MRK
+- CVX
+- WFC
+- PFE
+- KO
+- CMCSA
+- CSCO
+- PEP
+- BA
+- C
+- WMT
+- ADBE
+- MDT
+- ABT
+- MCD
+- BMY
+- AMGN
+- CRM
+- NVDA
+- PM
+- NFLX
+- ABBV
+- ACN
+- COST
+- PYPL
+- TMO
+- AVGO
+- HON
+- UNP
+- NKE
+- UTX
+- ORCL
+- IBM
+- TXN
+- NEE
+- LIN
+- SBUX
+- LLY
+- QCOM
+- MMM
+- GE
+- CVS
+- DHR
+- LMT
+- AMT
+- MO
+- LOW
+- USB
+- BKNG
+- AXP
+- FIS
+- GILD
+- UPS
+- CAT
+- MDLZ
+- CHTR
+- TFC
+- ANTM
+- GS
+- CI
+- TJX
+- ADP
+- BDX
+- CME
+- CB
+- PNC
+- COP
+- INTU
+- ISRG
+- D
+- SPGI
+- FISV
+- DUK
+- SYK
+- SO
+- TGT
+- MS
+- BSX
+- AGN
+- RTN

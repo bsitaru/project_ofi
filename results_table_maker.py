@@ -30,10 +30,13 @@ def get_log_results(log_path: str):
 
             if found:
                 key = l[3][:-1]
-                val = float(l[4])
-                std = float(l[7])
-                dict[key] = val
-                dict_std[key] = std
+                try:
+                    val = float(l[4])
+                    std = float(l[7])
+                    dict[key] = val
+                    dict_std[key] = std
+                except:
+                    pass
     return dict, dict_std
 
 
@@ -183,7 +186,7 @@ def transpose(l):
 @main.command()
 def custom():
     def get_name(l):
-        return f"individual_price_impact_issize_1800_ossize_1800_rolling_1800_seltype_OFI_lvl_{l}_volnrm_regtype_linear"
+        return f"individual_price_impact_issize_1800_ossize_1800_rolling_1800_seltype_SplitOFI_lvl_{l}_volnrm_regtype_lasso"
 
     experiments = [get_name(l) for l in range(1, 11)]
     centering = f"r|{'c' * 10}"
@@ -192,9 +195,10 @@ def custom():
     header = \
         f"""{bk}begin{{table}}[]
             {bk}centering
+            {bk}resizebox{{{bk}textwidth}}{{!}}{{
             {bk}begin{{tabular}}{{{centering}}}
             {bk}toprule
-                 & {' & '.join([f"${bk}modpi{{{l}}}$" for l in range(1, 11)])} {bk}{bk}
+                 & {' & '.join([f"${bk}modpid{{{l}}}$" for l in range(1, 11)])} {bk}{bk}
             {bk}midrule"""
 
     def get_rows(name):
@@ -210,14 +214,14 @@ def custom():
 
     rows = [get_rows(n) for n in experiments]
     rows = transpose(rows)
-    rows[0] = ['IS $R^2$'] + rows[0]
+    rows[0] = ['\multirow{ 2}{*}{IS $R^2$} '] + rows[0]
     rows[1] = [' '] + rows[1]
-    rows[2] = ['OS $R^2$'] + rows[2]
+    rows[2] = ['\multirow{ 2}{*}{OS $R^2$}'] + rows[2]
     rows[3] = [' '] + rows[3]
 
     ending = \
         """\\bottomrule
-            \\end{tabular}
+            \\end{tabular}}
             \\caption{Results}
             \\label{tab.results}
         \\end{table}

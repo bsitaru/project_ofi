@@ -24,6 +24,6 @@ regression:
 processor:
   normalize: False
   standardize: False
-  pca: 5
+  pca: 1
 
 

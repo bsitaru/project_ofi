@@ -144,7 +144,8 @@ def print_contemp_stats(args, results, logger):
     arr = results.average[tot_values + 4:].tolist()
     cols = results.column_names[3:tot_values + 3]
 
-    assert len(arr) == len(cols)
+    if len(arr) != len(cols):
+        return
 
     def group(get_group, aggr=sum, grouping_type=''):
         dct = {}

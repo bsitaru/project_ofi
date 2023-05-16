@@ -7,9 +7,12 @@ import constants
 import data_manipulation.prices as prices
 from logging_utils import log
 from data_loader.day_prices import DayPrices
-from strategy.strategy_results import StrategyResults
+from strategy.strategy_results import StrategyResults, DayResults
 
 HORIZONT = 60
+
+
+
 
 
 def make_strategy_portfolio(df: pd.DataFrame, logger=None, start_date=None, end_date=None, tickers=None):
@@ -81,20 +84,18 @@ def make_strategy_portfolio(df: pd.DataFrame, logger=None, start_date=None, end_
             tot_ret = sum(rets)
             all_rets.append(tot_ret)
 
-        all_rets = np.array(all_rets)
-        if all_rets.size == 0:
-            return 0.0
-        return np.mean(all_rets - 1.0)
+        all_rets = np.array(all_rets) - 1.0
+        day_results = DayResults(all_rets)
+        return day_results
 
-    all_profits = []
+    all_res = []
     for d in dates:
         if d in constants.EARLY_CLOSING_DAYS:
             continue
         date_df = date_dfs.get_group(d)
-        ret = solve_date(d, date_df)
-        log(f'date {d} pnl --- {ret}')
-        all_profits.append(ret)
+        res = solve_date(d, date_df)
+        log(f'date {d} pnl --- {res.pnl} --- ppd --- {res.ppd}')
+        all_res.append(res)
 
-    stats_mean = StrategyResults(all_profits)
+    stats_mean = StrategyResults(all_res)
     return stats_mean
-

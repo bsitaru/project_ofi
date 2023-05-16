@@ -1,5 +1,6 @@
 import os
 from datetime import date
+import numpy as np
 
 import constants
 import data_manipulation.prediction as pred
@@ -7,6 +8,8 @@ import typer
 import strategy.sign as stsign
 import strategy.portfolio as stportfolio
 from strategy.strategy_results import StrategyResults
+
+from sklearn.preprocessing import normalize
 
 from logging_utils import get_logger, log
 
@@ -25,21 +28,24 @@ def sign(folder_path: str):
     logger = get_logger(folder_path, 'pred_signs')
     files_list = os.listdir(folder_path)
     all_correct, all_tot = 0, 0
+    all_cnf = np.zeros(shape=(3, 3))
     for file_name in files_list:
         if 'predict' not in file_name:
             continue
         df = pred.get_prediction_df(os.path.join(folder_path, file_name))
-        ratio, correct, tot_num = stsign.get_heat_ratio(df)
+        ratio, correct, tot_num, cnf = stsign.get_heat_ratio(df)
         text = f"{file_name} --- ratio: {ratio} --- correct: {correct} --- total: {tot_num}"
         print(text)
         logger.info(text)
         all_correct += correct
         all_tot += tot_num
+        all_cnf += cnf
 
+    all_cnf = normalize(all_cnf, norm='l1', axis=1)
     ratio = all_correct / all_tot
     text = f"TOTAL --- ratio: {ratio} --- correct: {all_correct} --- total: {all_tot}"
-    print(text)
-    logger.info(text)
+    log(text, logger)
+    log(f"Confusion:\n {all_cnf}", logger)
 
 
 @main.command()

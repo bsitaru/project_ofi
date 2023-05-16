@@ -163,7 +163,7 @@ def future_table_maker(path: str):
             \\centering
             \\begin{tabular}{lccccc|ll|l}
             \\toprule
-                Exp & Model & Levels & PCA & Regression & Horizonts & In Sample & Out of Sample & PnL \\\\
+                Exp & Model & Levels & PCA & Regression & Horizonts & IS & OS & PnL \\\\
             \\midrule"""
 
     ending = \

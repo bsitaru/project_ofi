@@ -30,10 +30,15 @@ def get_log_results(log_path: str):
 
             if found:
                 key = l[3][:-1]
+
                 try:
-                    val = float(l[4])
-                    std = float(l[7])
+                    val = float(l[4].strip())
                     dict[key] = val
+                except:
+                    pass
+
+                try:
+                    std = float(l[7].strip())
                     dict_std[key] = std
                 except:
                     pass

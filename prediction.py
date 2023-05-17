@@ -83,5 +83,31 @@ def portfolio_quarters(folder_path: str):
     stats_mean.print(logger)
 
 
+@main.command()
+def portfolio_individual(folder_path: str, start_date=None, end_date=None, tickers=None):
+    if start_date is not None:
+        start_date = date.fromisoformat(start_date)
+    if end_date is not None:
+        end_date = date.fromisoformat(end_date)
+
+    if tickers is not None:
+        tickers = tickers.split(' ')
+    else:
+        tickers = constants.TICKERS[:100]
+
+    df = pred.get_all_predictions(folder_path)
+    all_stats = []
+    for t in tickers:
+        logger = get_logger(folder_path, f'portfolio_{t}')
+        logger.info("Predictions loaded...")
+        stats_mean = stportfolio.make_strategy_portfolio(df, logger, start_date=start_date, end_date=end_date, tickers=[t])
+        stats_mean.print(logger)
+        all_stats.append(stats_mean)
+
+    logger = get_logger(folder_path, f'portfolio_individual')
+    stats_mean = StrategyResults.from_strategy_results_list(all_stats)
+    stats_mean.print(logger)
+
+
 if __name__ == '__main__':
     main()

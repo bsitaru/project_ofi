@@ -229,6 +229,11 @@ def print_future_stats(args, results, logger):
             return f"{name[1]}_{name[-1]}"
         group(get_ofi_and_horizont, grouping_type='ofi type and horizont')
 
+        def get_ofi_and_level(name):
+            name = name.split('_')
+            return f"lev_{name[1]}_{name[-2]}"
+        group(get_ofi_and_level, grouping_type='ofi type and level')
+
     if 'multipca' not in args.selector:
         def get_level_group(name):
             return name.split('_')[-2]

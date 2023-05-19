@@ -52,42 +52,34 @@ def get_results_from_folder(path: str):
     for f in folders:
         f_path = os.path.join(path, f)
         args = ConfigDict(load_yaml(os.path.join(f_path, 'config.yaml')))
-        r_is, r_os = get_is_os_from_log(os.path.join(f_path, 'logs.log'))
+        dct, dct_std = get_log_results(os.path.join(f_path, 'logs.log'))
 
-        if args.experiment.name not in ['clustered_price_impact', 'neigh_price_impact']:
+        levels = args.selector.levels
+        regression = args.regression.type
+        model = args.selector.type
+
+        if model not in ['OFI', 'SplitOFI']:
+            continue
+        if args.experiment.name != 'clustered_price_impact':
+            continue
+        if args.processor.normalize!= False:
             continue
 
-        # name = 'Individual' if args.experiment.name == 'individual_price_impact' else 'Universal'
-        name = 'Clustered' if args.experiment.name == 'clustered_price_impact' else 'Neighbour'
-        model = args.selector.type
-        levels = args.selector.levels
-        pca = '' if 'pca' not in args.processor else args.processor.pca
-        if 'multipca' in args.processor:
-            pca = f'multi-{args.processor.multipca.groups}-{args.processor.multipca.components}'
-        regression = args.regression.type
-        normalization = ''
-        if args.selector.volume_normalize:
-            if args.processor.normalize:
-                normalization = 'both'
-            else:
-                normalization = 'volume'
-        elif args.processor.normalize:
-            normalization = 'column'
+        bk = '\\'
+        modpi_param = levels
+        if 'pca' in args.processor:
+            modpi_param = 'I'
+            if model == 'SplitOFI':
+                modpi_param += f', {args.processor.pca}'
+        model_name = f"{bk}{'modpi' if model == 'OFI' else 'modpid'}{{{modpi_param}}}"
+        fitting = 'OLS' if regression == 'linear' else 'Lasso'
 
-        cluster_size = None
-        if name == 'Clustered':
-            cluster_size = args.clustering.n_clusters
-        else:
-            cluster_size = args.neighbours.neigh_size
+        l = [dct['in_r2'], dct_std['in_r2'], dct['os_r2'], dct_std['os_r2']]
+        l = list(map(lambda x: round(x * 100.0, 2), l))
 
-        cluster_data = None
-        if name == 'Clustered':
-            cluster_data = args.clustering.data
-        else:
-            cluster_data = args.neighbours.data
+        cls_data = 'OFI' if args.clustering.data == 'x' else 'Returns'
 
-        # table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {normalization} & {r_is} & {r_os} \\\\"
-        table_line = f"{name} & {model} & {levels} & {pca} & {regression} & {cluster_size} & {cluster_data} & {r_is} & {r_os} \\\\"
+        table_line = f"${model_name}$ & {fitting} & {args.clustering.n_clusters} & K-Means & {cls_data} & {l[0]} & {l[1]} & {l[2]} & {l[3]} {bk}{bk}"
         lns.append(table_line)
     return lns
 
